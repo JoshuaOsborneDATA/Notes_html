@@ -1,0 +1,8 @@
+title: Your Note Title
+description: "One-line description shown on the portfolio card."
+author: Your Name
+slug: your-note-slug        # optional: only needed if the filename alone gives the wrong URL
+prev: path/to/prev-note.html
+prevtitle: Previous Note Title
+next: path/to/next-note.html
+nexttitle: Next Note Title

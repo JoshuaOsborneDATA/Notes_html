@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upper Confidence Bound
+(UCB1) — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../../../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>Upper Confidence Bound (UCB1)</h1>
+  <p class="notes-hero-sub">Optimism in the face of uncertainty: the
+Hoeffding-derived bonus that achieves logarithmic regret with no tuning
+parameter.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>Upper Confidence Bound (UCB1) solves the
+    <a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/multi-arm-bandit.html">multi-arm
+    bandit</a> by acting on optimism: essentially, this algorithm will
+    pull an arm either because an arm is performing very well or if it
+    “feels” as if an arm has not been explored thoroughly. The exact
+    formulation of this will be discussed down below.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>The weakness of the
+    <a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/epsilon-greedy.html">Epsilon
+    greedy algorithm</a> is that its exploration is blind: you keep
+    pulling the best arm all the time except when you pull a value below
+    or equal to epsilon without any worry about how often you’ve sample
+    a distribution. This means that it requires you to fine tune your
+    epsilon to get the best results. UCB1 (<a
+    href="https://link.springer.com/content/pdf/10.1023/a:1013689704352.pdf">Auer,
+    Cesa-Bianchi, Fischer, 2002</a>) removes both problems with one
+    idea, often called <strong>optimism in the face of
+    uncertainty</strong>: treat every arm as if its true mean were the
+    best value still statistically plausible given the data.
+    Plausibility is quantified with a confidence interval built from <a
+    href="https://www.tandfonline.com/doi/pdf/10.1080/01621459.1963.10500830?casa_token=enyF_-MEw-AAAAAA:uLtJL3XR7sJieY7s75722VATpmEgZ-UC9R0-EDhrMrR486MRcph9RfxBVsxxkgMIFr2QTT7Cf6MHrg">Hoeffding’s
+    inequality</a> (see <span class="wikilink"
+    title="See: Hoeffding&#39;s inequality">Hoeffding’s
+    inequality</span>). So exploration is driven by how uncertain we are
+    about each arm. The payoff is a cumulative regret that grows like
+    <span class="math inline">\(\log T\)</span> instead of linearly,
+    with no tuning parameter at all.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>Pull each arm once to initialize. Then at every round <span
+    class="math inline">\(t\)</span> (this is the total number of
+    pulls), compute for each arm, <span
+    class="math inline">\(i\)</span>, the UCB index</p>
+    <p><span class="math display">\[\text{UCB}_i(t) = \hat{\mu}_i +
+    \sqrt{\frac{2 \ln t}{n_i}}\]</span></p>
+    <p>and pull the arm with the largest UCB index. The first term
+    favors arms that have performed well (exploitation); the second
+    grows with total time but shrinks with each pull of arm <span
+    class="math inline">\(i\)</span> (exploration). From here you then
+    need to update that arm’s running mean, pull count, and repeat. To
+    update the running mean it is simply:</p>
+    <p><span class="math display">\[\hat{\mu}_i \leftarrow \hat{\mu}_i +
+    \frac{r - \hat{\mu}_i}{n_i}\]</span></p>
+    <p>Where <strong>r</strong> is the reward and n is the number of
+    pulls for that given arm. The algorithm is fully deterministic given
+    the observed rewards.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(K\)</span></td>
+    <td>integer</td>
+    <td>number of arms</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mu_i\)</span></td>
+    <td>scalar</td>
+    <td>true mean reward of arm <span class="math inline">\(i\)</span>,
+    in <span class="math inline">\([0, 1]\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mu^*\)</span></td>
+    <td>scalar</td>
+    <td>mean of the best arm, <span class="math inline">\(\max_i
+    \mu_i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\Delta_i\)</span></td>
+    <td>scalar</td>
+    <td>suboptimality gap of arm <span class="math inline">\(i\)</span>,
+    <span class="math inline">\(\mu^* - \mu_i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{\mu}_i\)</span></td>
+    <td>estimator</td>
+    <td>empirical mean reward of arm <span
+    class="math inline">\(i\)</span> from pulls so far</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n_i\)</span></td>
+    <td>integer</td>
+    <td>number of times arm <span class="math inline">\(i\)</span> has
+    been pulled</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(r_j\)</span></td>
+    <td>random variable</td>
+    <td>reward on pull <span class="math inline">\(j\)</span>, bounded
+    in <span class="math inline">\([0, 1]\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(t\)</span></td>
+    <td>integer</td>
+    <td>current round number</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(T\)</span></td>
+    <td>integer</td>
+    <td>horizon, total number of rounds</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(u\)</span></td>
+    <td>scalar</td>
+    <td>half-width of a confidence interval (the bonus)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\delta\)</span></td>
+    <td>scalar</td>
+    <td>allowed failure probability of one confidence bound, in <span
+    class="math inline">\((0, 1)\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{UCB}_i(t)\)</span></td>
+    <td>scalar</td>
+    <td>index of arm <span class="math inline">\(i\)</span> at round
+    <span class="math inline">\(t\)</span>: <span
+    class="math inline">\(\hat{\mu}_i + u\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(R(T)\)</span></td>
+    <td>scalar</td>
+    <td>cumulative expected regret after <span
+    class="math inline">\(T\)</span> rounds</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <section id="derivation-1-the-bonus-term-from-hoeffdings-inequality"
+    class="level3">
+    <h3>Derivation 1: the bonus term from Hoeffding’s inequality</h3>
+    <p><strong>Step 1.</strong> Hoeffding’s inequality: if <span
+    class="math inline">\(r_1, \dots, r_n\)</span> are independent
+    random variables bounded in <span class="math inline">\([0,
+    1]\)</span> with true mean <span class="math inline">\(\mu\)</span>,
+    then the empirical mean <span class="math inline">\(\hat{\mu} =
+    \frac{1}{n}\sum_j r_j\)</span> concentrates around <span
+    class="math inline">\(\mu\)</span>:</p>
+    <p><span class="math display">\[P\left(\mu \geq \hat{\mu} + u\right)
+    \;\leq\; e^{-2 n u^2}\]</span></p>
+    <p><span class="math inline">\(u\)</span> is the margin, it is
+    basically how much error you’re willing to tolerate between your
+    true and empirical mean. So the equation above can be read as: the
+    chance that the true mean exceeds the empirical mean by more than
+    <span class="math inline">\(u\)</span> decays exponentially in both
+    the sample size and the squared margin. The exponential comes from
+    the use of the <span class="wikilink"
+    title="See: Moment generating function">MGF</span></p>
+    <p><strong>Step 2.</strong> Decide how much failure probability
+    <span class="math inline">\(\delta\)</span> to tolerate, and solve
+    for the margin <span class="math inline">\(u\)</span> that achieves
+    it. Set the bound equal to <span
+    class="math inline">\(\delta\)</span>:</p>
+    <p><span class="math display">\[e^{-2 n u^2} = \delta\]</span></p>
+    <p><strong>Step 3.</strong> Take natural logs of both sides: <span
+    class="math inline">\(-2 n u^2 = \ln \delta\)</span>, so <span
+    class="math inline">\(u^2 = \dfrac{\ln(1/\delta)}{2n}\)</span>,
+    giving</p>
+    <p><span class="math display">\[u =
+    \sqrt{\frac{\ln(1/\delta)}{2n}}\]</span></p>
+    <p>So with probability at least <span class="math inline">\(1 -
+    \delta\)</span>, the true mean satisfies <span
+    class="math inline">\(\mu &lt; \hat{\mu} + u\)</span>. The quantity
+    <span class="math inline">\(\hat{\mu} + u\)</span> is a legitimate
+    (probabilistic) upper confidence bound.</p>
+    <p><strong>Step 4.</strong> Choose <span
+    class="math inline">\(\delta\)</span> per round. UCB1 sets <span
+    class="math inline">\(\delta = t^{-4}\)</span>, a failure
+    probability that shrinks as the experiment runs. Substitute into
+    Step 3:</p>
+    <p><span class="math display">\[u = \sqrt{\frac{\ln(t^4)}{2 n_i}} =
+    \sqrt{\frac{4 \ln t}{2 n_i}} = \sqrt{\frac{2 \ln
+    t}{n_i}}\]</span></p>
+    <p>which is exactly the bonus in the definition.</p>
+    <p><strong>Step 5.</strong> Why <span
+    class="math inline">\(t^{-4}\)</span> and not a constant? The bound
+    must hold simultaneously for every arm at every round, and a union
+    bound adds the failure probabilities up. The series <span
+    class="math inline">\(\sum_t t^{-4}\)</span> converges, so the total
+    probability of ever being badly wrong stays small even over an
+    infinite horizon. A constant <span
+    class="math inline">\(\delta\)</span> would accumulate failures
+    linearly. The <span class="math inline">\(\ln t\)</span> in the
+    numerator is the price of this everlasting validity: bounds widen
+    slowly over time so that even a long-neglected arm eventually gets
+    rechecked.</p>
+    </section>
+    <section
+    id="derivation-2-why-optimism-yields-logarithmic-regret-sketch-with-the-key-steps"
+    class="level3">
+    <h3>Derivation 2: why optimism yields logarithmic regret (sketch
+    with the key steps)</h3>
+    <p><strong>Step 1.</strong> Suppose all confidence bounds hold at
+    round <span class="math inline">\(t\)</span> (true with high
+    probability by Derivation 1). For the best arm,</p>
+    <p><span class="math display">\[\text{UCB}_*(t) = \hat{\mu}_* + u_*
+    \geq \mu^*\]</span></p>
+    <p>The best arm’s index never understates its true mean, so the best
+    arm always remains “in contention.”</p>
+    <p><strong>Step 2.</strong> For a suboptimal arm, <span
+    class="math inline">\(i\)</span>, to be pulled, its index must beat
+    the best arm’s index:</p>
+    <p><span class="math display">\[\hat{\mu}_i + u_i \;\geq\;
+    \text{UCB}_*(t) \;\geq\; \mu^*\]</span></p>
+    <p><strong>Step 3.</strong> The bound on arm <span
+    class="math inline">\(i\)</span> in the other direction (Hoeffding
+    is symmetric) gives <span class="math inline">\(\hat{\mu}_i \leq
+    \mu_i + u_i\)</span> with high probability. Substitute into Step
+    2:</p>
+    <p><span class="math display">\[\mu_i + 2 u_i \;\geq\; \mu^*
+    \quad\Longrightarrow\quad 2 u_i \;\geq\; \Delta_i\]</span></p>
+    <p>A suboptimal arm only gets pulled while its uncertainty is still
+    at least half its gap.</p>
+    <p><strong>Step 4.</strong> Unpack <span class="math inline">\(u_i =
+    \sqrt{2 \ln t / n_i}\)</span> in the inequality <span
+    class="math inline">\(2u_i \geq \Delta_i\)</span> and solve for
+    <span class="math inline">\(n_i\)</span>:</p>
+    <p><span class="math display">\[2\sqrt{\frac{2 \ln t}{n_i}} \geq
+    \Delta_i \quad\Longrightarrow\quad n_i \;\leq\; \frac{8 \ln
+    t}{\Delta_i^2}\]</span></p>
+    <p>Once arm <span class="math inline">\(i\)</span> has been pulled
+    this many times, its interval is too narrow to beat the best arm
+    again. Pulls of every suboptimal arm are capped at a multiple of
+    <span class="math inline">\(\ln t\)</span>.</p>
+    <p><strong>Step 5.</strong> Each pull of arm <span
+    class="math inline">\(i\)</span> costs regret <span
+    class="math inline">\(\Delta_i\)</span>, so summing over the
+    suboptimal arms gives the UCB1 regret theorem:</p>
+    <p><span class="math display">\[R(T) \;\leq\; \sum_{i\,:\,\Delta_i
+    &gt; 0} \frac{8 \ln T}{\Delta_i} \;+\; \left(1 +
+    \frac{\pi^2}{3}\right) \sum_{i} \Delta_i\]</span></p>
+    <p>The first term is the logarithmic exploration cost; the second is
+    a constant covering the rare rounds where a confidence bound fails.
+    Note the structure: hard-to-distinguish arms (small <span
+    class="math inline">\(\Delta_i\)</span>) cost more pulls but each
+    pull costs little, while clearly bad arms are dismissed after a
+    handful of tries.</p>
+    </section>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p>Same three arms as the
+    <a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/epsilon-greedy.html">Epsilon
+    greedy algorithm</a> example: true rates <span
+    class="math inline">\(0.3, 0.5, 0.7\)</span>. Initialization pulls
+    gave arm 1 a reward of 1, arm 2 a 0, and arm 3 a 1.</p>
+    <p><strong>Round 4</strong> (<span class="math inline">\(t =
+    4\)</span>, <span class="math inline">\(\ln 4 = 1.386\)</span>).
+    Every arm has <span class="math inline">\(n_i = 1\)</span>, so all
+    bonuses equal <span class="math inline">\(\sqrt{2 \times 1.386 / 1}
+    = 1.665\)</span>:</p>
+    <table>
+    <thead>
+    <tr>
+    <th>Arm</th>
+    <th><span class="math inline">\(\hat{\mu}_i\)</span></th>
+    <th>bonus</th>
+    <th><span class="math inline">\(\text{UCB}_i\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>1.0</td>
+    <td>1.665</td>
+    <td>2.665</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>0.0</td>
+    <td>1.665</td>
+    <td>1.665</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>1.0</td>
+    <td>1.665</td>
+    <td>2.665</td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Arms 1 and 3 tie; break by lowest index and pull arm 1. Reward 0,
+    so <span class="math inline">\(\hat{\mu}_1 = 0.5\)</span>, <span
+    class="math inline">\(n_1 = 2\)</span>.</p>
+    <p><strong>Round 5</strong> (<span class="math inline">\(t =
+    5\)</span>, <span class="math inline">\(\ln 5 = 1.609\)</span>). Arm
+    1’s bonus shrinks because <span class="math inline">\(n_1 =
+    2\)</span>; the others’ bonuses grow slightly because <span
+    class="math inline">\(t\)</span> grew:</p>
+    <table>
+    <thead>
+    <tr>
+    <th>Arm</th>
+    <th><span class="math inline">\(\hat{\mu}_i\)</span></th>
+    <th>bonus</th>
+    <th><span class="math inline">\(\text{UCB}_i\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>0.5</td>
+    <td><span class="math inline">\(\sqrt{3.219/2} = 1.269\)</span></td>
+    <td>1.769</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>0.0</td>
+    <td><span class="math inline">\(\sqrt{3.219/1} = 1.794\)</span></td>
+    <td>1.794</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>1.0</td>
+    <td><span class="math inline">\(\sqrt{3.219/1} = 1.794\)</span></td>
+    <td>2.794</td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Pull arm 3. Reward 1, so <span class="math inline">\(\hat{\mu}_3
+    = 1.0\)</span>, <span class="math inline">\(n_3 = 2\)</span>.</p>
+    <p><strong>Round 6</strong> (<span class="math inline">\(t =
+    6\)</span>, <span class="math inline">\(\ln 6 = 1.792\)</span>):</p>
+    <table>
+    <thead>
+    <tr>
+    <th>Arm</th>
+    <th><span class="math inline">\(\hat{\mu}_i\)</span></th>
+    <th>bonus</th>
+    <th><span class="math inline">\(\text{UCB}_i\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>0.5</td>
+    <td><span class="math inline">\(\sqrt{3.584/2} = 1.339\)</span></td>
+    <td>1.839</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>0.0</td>
+    <td><span class="math inline">\(\sqrt{3.584/1} = 1.893\)</span></td>
+    <td>1.893</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>1.0</td>
+    <td><span class="math inline">\(\sqrt{3.584/2} = 1.339\)</span></td>
+    <td>2.339</td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Pull arm 3 again. Reward 0, so <span
+    class="math inline">\(\hat{\mu}_3 = 0.667\)</span>, <span
+    class="math inline">\(n_3 = 3\)</span>.</p>
+    <p><strong>Round 7</strong> (<span class="math inline">\(t =
+    7\)</span>, <span class="math inline">\(\ln 7 = 1.946\)</span>):</p>
+    <table>
+    <thead>
+    <tr>
+    <th>Arm</th>
+    <th><span class="math inline">\(\hat{\mu}_i\)</span></th>
+    <th>bonus</th>
+    <th><span class="math inline">\(\text{UCB}_i\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>0.5</td>
+    <td><span class="math inline">\(\sqrt{3.892/2} = 1.395\)</span></td>
+    <td>1.895</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>0.0</td>
+    <td><span class="math inline">\(\sqrt{3.892/1} = 1.973\)</span></td>
+    <td><strong>1.973</strong></td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>0.667</td>
+    <td><span class="math inline">\(\sqrt{3.892/3} = 1.139\)</span></td>
+    <td>1.806</td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Now the most interesting round: arm 2 wins <strong>despite having
+    the worst empirical mean (zero!)</strong>, purely because it has
+    been pulled least and its uncertainty is largest. This is the
+    directed exploration in play: no coin flip was needed to choose arm
+    2, instead it comes about naturally from the arithmetic. An
+    epsilon-greedy agent would only revisit arm 2 by luck.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>The animation below shows UCB1 in action: each solid bar is the
+    running empirical mean <span
+    class="math inline">\(\hat{\mu}_i\)</span>; the hatched extension is
+    the UCB bonus, which is the upper confidence bound which is a
+    function of how many times the arm has been pulled. The vertical
+    dashed lines mark the true probabilities. Watch Arm 3’s bonus
+    collapse as it earns pulls, while the neglected arms keep wide
+    intervals.</p>
+    <p><img src="../../../images/ucb1_convergence.gif" /></p>
+    <p>below shows the full regret comparison:</p>
+    <p><img src="../../../images/upper_confidence_bound.png" /></p>
+    <p><strong>What to look at:</strong></p>
+    <ul>
+    <li><p><strong>Left</strong>: each arm’s empirical mean (dot) with
+    its bonus (whisker) at five snapshots of a single run. Arm 3’s
+    interval narrows fast because it earns its pulls (<span
+    class="math inline">\(n = 9662\)</span> by the end); the neglected
+    arms keep wide intervals, which is what guarantees they get
+    occasional rechecks. Dotted lines mark the true means</p></li>
+    <li><p><strong>Right</strong>: averaged over 200 runs, UCB1’s
+    cumulative regret bends over and flattens (logarithmic growth) while
+    <span class="math inline">\(\varepsilon\)</span>-greedy at <span
+    class="math inline">\(\varepsilon = 0.1\)</span> marches on
+    linearly; they cross near round 3,000 and the gap widens forever
+    after</p></li>
+    <li><p>Note the early rounds: UCB1 actually pays
+    <strong>more</strong> regret than epsilon-greedy at first, because
+    it insists on properly checking every arm before committing</p></li>
+    </ul>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“The UCB index estimates the arm’s mean.”</strong>
+    No. The index is a deliberately inflated score used only for ranking
+    arms; <span class="math inline">\(\hat{\mu}_i\)</span> alone is the
+    estimate of <span class="math inline">\(\mu_i\)</span>. Reporting
+    <span class="math inline">\(\text{UCB}_i\)</span> as a metric
+    estimate would overstate every arm.</p>
+    <p><strong>“UCB1 needs the exploration rate tuned.”</strong> There
+    is nothing to tune; that is the headline feature. The constant 2 in
+    the bonus comes from the <span class="math inline">\(\delta =
+    t^{-4}\)</span> schedule in the derivation, not from fitting.
+    (Variants like UCB(<span class="math inline">\(\alpha\)</span>) do
+    expose that constant, trading the strength of the guarantee against
+    empirical aggressiveness.)</p>
+    <p><strong>“UCB1 is always better than epsilon-greedy in
+    practice.”</strong> At short horizons a well-tuned epsilon-greedy
+    algorithm often wins, as the early part of the regret panel shows:
+    UCB1 spends the opening rounds methodically verifying arms that
+    epsilon-greedy has already abandoned. UCB1’s advantage is the
+    guarantee and the long run, not every finite sample.</p>
+    <p><strong>“The reward bound does not matter.”</strong> Hoeffding’s
+    inequality in Derivation 1 requires rewards bounded in <span
+    class="math inline">\([0, 1]\)</span>. Revenue-like metrics with
+    long tails violate this; they must be clipped or rescaled, or a
+    variance-aware variant (<span class="wikilink"
+    title="See: UCB-V">UCB-V</span>) or
+    <a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html">Thompson
+    sampling</a> with an appropriate likelihood should be used
+    instead.</p>
+    <p><strong>“Since bounds hold with high probability, UCB never pulls
+    a bad arm late.”</strong> It does, rarely and by design: the <span
+    class="math inline">\(\ln t\)</span> numerator slowly re-widens
+    every interval, forcing occasional rechecks forever. That is the
+    algorithm’s insurance against an early unlucky streak on the true
+    best arm, and it is why the regret curve flattens but never goes
+    perfectly horizontal.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <ul>
+    <li><p><a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/epsilon-greedy.html">Epsilon
+    greedy algorithm</a>: the undirected-exploration baseline UCB1
+    improves on; same incremental mean update, different arm choice
+    rule</p></li>
+    <li><p><a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html">Thompson
+    sampling</a>: the Bayesian counterpart; where UCB adds a
+    deterministic bonus to a point estimate, Thompson samples from a
+    full posterior, and both concentrate pulls on plausible
+    winners</p></li>
+    <li><p><span class="wikilink"
+    title="See: confidence intervals">confidence intervals</span>: the
+    bonus is literally the half-width of a one-sided confidence
+    interval, re-derived each round</p></li>
+    <li><p><span class="wikilink" title="See: What is AB-testing">What
+    is AB-testing</span>: bandits trade the clean inference of a
+    fixed-horizon test for lower regret during the experiment
+    itself</p></li>
+    <li><p><span class="wikilink"
+    title="See: Bernoulli distribution">Bernoulli distribution</span>:
+    the bounded reward model that makes Hoeffding’s inequality
+    applicable here</p></li>
+    </ul>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <ul>
+    <li><p>Auer, P., Cesa-Bianchi, N., Fischer, P. (2002).
+    <em>Finite-time Analysis of the Multiarmed Bandit Problem.</em>
+    Machine Learning, 47, 235-256.</p></li>
+    <li><p>Slivkins, A. (2019). <em>Introduction to Multi-Armed
+    Bandits.</em> Foundations and Trends in Machine Learning.
+    https://arxiv.org/abs/1904.07272</p></li>
+    <li><p>Lattimore, T., Szepesvari, C. (2020). <em>Bandit
+    Algorithms.</em> Cambridge University Press. Chapters 7-8.</p></li>
+    <li><p>Sutton, R. S., Barto, A. G. (2018). <em>Reinforcement
+    Learning: An Introduction</em>, 2nd ed. MIT Press. Section
+    2.7.</p></li>
+    </ul>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/epsilon-greedy.html" class="note-nav-link note-nav-prev">
+    <span>
+      <span class="note-nav-label">&#8592; Previous</span>
+      <span class="note-nav-title">Epsilon-Greedy</span>
+    </span>
+  </a>
+      <a href="../../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html" class="note-nav-link note-nav-next">
+    <span>
+      <span class="note-nav-label">Next &#8594;</span>
+      <span class="note-nav-title">Thompson Sampling</span>
+    </span>
+  </a>
+  </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>

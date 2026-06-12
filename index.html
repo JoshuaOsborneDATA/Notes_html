@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Statistics Notes — Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem; color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem; transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem; text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .6rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 560px; margin: 0 auto; line-height: 1.6;
+    }
+
+    /* Tree container */
+    .tree-wrap {
+      max-width: 720px; margin: 3rem auto 5rem; padding: 0 2rem;
+    }
+
+    /* Tree root list */
+    .tree, .tree ul {
+      list-style: none; padding: 0; margin: 0;
+    }
+    .tree ul {
+      padding-left: 1.5rem;
+      border-left: 1px solid var(--border);
+      margin-left: .65rem;
+      margin-top: .2rem;
+    }
+    .tree li { position: relative; }
+
+    /* Folder rows */
+    .tree details { }
+    .tree details summary {
+      list-style: none; display: flex; align-items: center; gap: .5rem;
+      padding: .42rem .6rem; border-radius: 6px; cursor: pointer;
+      user-select: none; color: var(--heading);
+      font-size: .9rem; font-weight: 600;
+      transition: background .12s;
+    }
+    .tree details summary::-webkit-details-marker { display: none; }
+    .tree details summary:hover { background: var(--mid); }
+
+    .folder-icon { font-size: .95rem; flex-shrink: 0; }
+    .folder-name { flex: 1; }
+    .chevron {
+      font-size: .65rem; color: var(--muted);
+      transition: transform .18s; flex-shrink: 0;
+    }
+    .tree details[open] > summary .chevron { transform: rotate(90deg); }
+
+    /* File rows */
+    .tree-file {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .38rem .6rem; border-radius: 6px;
+      color: var(--text); font-size: .875rem;
+      text-decoration: none;
+      transition: background .12s, color .12s;
+    }
+    .tree-file:hover {
+      background: var(--mid); color: var(--blue-l); text-decoration: none;
+    }
+    .file-icon { font-size: .85rem; flex-shrink: 0; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../index.html#projects">&#8592; Portfolio</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>Notes Index</h1>
+  <p class="notes-hero-sub">Self-contained notes on statistics and machine learning — full derivations, worked examples, and visualisations.</p>
+</div>
+
+<div class="tree-wrap">
+  <!-- NOTES_TREE_START -->
+    <ul class="tree">
+    <li>
+      <details open>
+        <summary>
+          <span class="folder-icon">📂</span>
+          <span class="folder-name">Hypothesis Testing</span>
+          <span class="chevron">&#9654;</span>
+        </summary>
+        <ul>
+        <li>
+          <details open>
+            <summary>
+              <span class="folder-icon">📂</span>
+              <span class="folder-name">AB-Testing</span>
+              <span class="chevron">&#9654;</span>
+            </summary>
+            <ul>
+            <li>
+              <details open>
+                <summary>
+                  <span class="folder-icon">📂</span>
+                  <span class="folder-name">Multi-Arm Bandit</span>
+                  <span class="chevron">&#9654;</span>
+                </summary>
+                <ul>
+                  <li><a class="tree-file" href="hypothesis-testing/ab-testing/multi-arm-bandit/epsilon-greedy.html"><span class="file-icon">📄</span> Epsilon-Greedy Algorithm</a></li>
+                  <li><a class="tree-file" href="hypothesis-testing/ab-testing/multi-arm-bandit/multi-arm-bandit.html"><span class="file-icon">📄</span> Multi-Arm Bandit</a></li>
+                  <li><a class="tree-file" href="hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html"><span class="file-icon">📄</span> Thompson Sampling</a></li>
+                  <li><a class="tree-file" href="hypothesis-testing/ab-testing/multi-arm-bandit/upper-confidence-bound.html"><span class="file-icon">📄</span> Upper Confidence Bound (UCB1)</a></li>
+                </ul>
+              </details>
+            </li>
+            </ul>
+          </details>
+        </li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details open>
+        <summary>
+          <span class="folder-icon">📂</span>
+          <span class="folder-name">Probability Theory</span>
+          <span class="chevron">&#9654;</span>
+        </summary>
+        <ul>
+        <li>
+          <details open>
+            <summary>
+              <span class="folder-icon">📂</span>
+              <span class="folder-name">Bayesian Statistics</span>
+              <span class="chevron">&#9654;</span>
+            </summary>
+            <ul>
+              <li><a class="tree-file" href="probability-theory/bayesian-statistics/bayes-rule.html"><span class="file-icon">📄</span> Bayes' Rule</a></li>
+            </ul>
+          </details>
+        </li>
+        </ul>
+      </details>
+    </li>
+    </ul>
+  <!-- NOTES_TREE_END -->
+</div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../index.html">Portfolio</a></p>
+</footer>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+</script>
+
+</body>
+</html>

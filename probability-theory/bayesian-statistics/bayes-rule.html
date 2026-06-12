@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bayes' Rule — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>Bayes' Rule</h1>
+  <p class="notes-hero-sub">How prior beliefs update on new evidence.
+The foundation of Bayesian inference, Thompson Sampling, and conjugate
+priors.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#set-notation" id="toc-set-notation">Set
+    Notation</a></li>
+    <li><a href="#conditional-probability"
+    id="toc-conditional-probability">Conditional Probability</a></li>
+    <li><a href="#intuition" id="toc-intuition">Intuition</a></li>
+    <li><a href="#equation-and-variable-meaning"
+    id="toc-equation-and-variable-meaning">Equation and variable
+    meaning</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#applications"
+    id="toc-applications">Applications</a></li>
+    <li><a href="#example-thompson-sampling"
+    id="toc-example-thompson-sampling">Example: Thompson
+    Sampling</a></li>
+    <li><a href="#a-simple-derivation-of-bayes-rule"
+    id="toc-a-simple-derivation-of-bayes-rule">A Simple Derivation of
+    Bayes’ Rule</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <section id="set-notation" class="level2">
+    <h2>Set Notation</h2>
+    <p>Before the equations, here is the notation used throughout:</p>
+    <table>
+    <colgroup>
+    <col style="width: 25%" />
+    <col style="width: 25%" />
+    <col style="width: 25%" />
+    <col style="width: 25%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Name</th>
+    <th>Meaning</th>
+    <th>Plain English</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(\Omega\)</span></td>
+    <td>Sample space</td>
+    <td>the set of all possible outcomes</td>
+    <td>“everything that could happen”</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(A, B\)</span></td>
+    <td>Events</td>
+    <td>subsets of <span class="math inline">\(\Omega\)</span></td>
+    <td>“a particular outcome or group of outcomes”</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(A \cap B\)</span></td>
+    <td>Intersection</td>
+    <td>outcomes in both A and B</td>
+    <td>“A <strong>and</strong> B”</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(A \cup B\)</span></td>
+    <td>Union</td>
+    <td>outcomes in A or B or both</td>
+    <td>“A <strong>or</strong> B”</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(A^c\)</span></td>
+    <td>Complement</td>
+    <td>outcomes in <span class="math inline">\(\Omega\)</span> but not
+    in A</td>
+    <td>“<strong>not</strong> A”</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(P(A)\)</span></td>
+    <td>Probability</td>
+    <td>a number in <span class="math inline">\([0,1]\)</span> measuring
+    how likely A is</td>
+    <td>“the chance of A”</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Quick example</strong> - rolling a fair die, <span
+    class="math inline">\(\Omega = \{1,2,3,4,5,6\}\)</span>:</p>
+    <ul>
+    <li><span class="math inline">\(A = \{2,4,6\}\)</span> (even), <span
+    class="math inline">\(B = \{4,5,6\}\)</span> (greater than 3)</li>
+    <li><span class="math inline">\(A \cap B = \{4,6\}\)</span>; even
+    <strong>and</strong> greater than 3</li>
+    <li><span class="math inline">\(A \cup B = \{2,4,5,6\}\)</span>;
+    even <strong>or</strong> greater than 3</li>
+    <li><span class="math inline">\(A^c = \{1,3,5\}\)</span>;
+    <strong>not</strong> even</li>
+    </ul>
+    </section>
+    <section id="conditional-probability" class="level2">
+    <h2>Conditional Probability</h2>
+    <p>Conditional probability is the probability of event A occurring
+    <em>given</em> that B has already occurred: <span
+    class="math display">\[P(A \mid B) = \frac{P(A \cap
+    B)}{P(B)}\]</span> Intuitively: we restrict the sample space to only
+    the outcomes where B happened, then ask what fraction of those also
+    include A.</p>
+    </section>
+    <section id="intuition" class="level2">
+    <h2>Intuition</h2>
+    <p>Bayes’ rule describes how to update a belief when new evidence
+    arrives. First you begin with what is called your
+    <strong>prior</strong>. The prior represents your belief in
+    something before seeing any evidence. When modelling a probability
+    (such as a click rate or open rate) with no prior knowledge;
+    Beta(1,1), the uniform distribution, is a common uninformative
+    starting point because it assigns equal plausibility to all values
+    of θ between 0 and 1. You then observe evidence, and Bayes tells you
+    exactly how much to update that belief into a
+    <strong>posterior</strong>.</p>
+    <p>The <strong>likelihood</strong> is what connects the two: it
+    measures how well the evidence is explained by your hypothesis.</p>
+    </section>
+    <section id="equation-and-variable-meaning" class="level2">
+    <h2>Equation and variable meaning</h2>
+    <p><span class="math display">\[P(A \mid B) = \frac{P(B \mid A)
+    \cdot P(A)}{P(B)}\]</span> <span class="math display">\[P(B) = \int
+    P(B \mid A) \cdot P(A) dA\]</span></p>
+    <p>Each term has a name:</p>
+    <table>
+    <colgroup>
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Term</th>
+    <th>Name</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(P(A \mid B)\)</span></td>
+    <td>Posterior</td>
+    <td>probability of A being true given we’ve seen B</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(P(B \mid A)\)</span></td>
+    <td>Likelihood</td>
+    <td>probability of seeing B if A were true</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(P(A)\)</span></td>
+    <td>Prior</td>
+    <td>our belief in A before seeing any evidence</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(P(B)\)</span></td>
+    <td>Marginal</td>
+    <td>overall probability of seeing B regardless of A</td>
+    </tr>
+    </tbody>
+    </table>
+    <div class="note-callout">
+    <p><strong>NOTE:</strong> normally, we do not calculate the marginal
+    distribution as it is computationally costly, instead we use the
+    unnormalized posterior, <span class="math inline">\(P(B \mid A)
+    \cdot P(A)\)</span> .</p>
+    </div>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>Confusing P(A|B) with P(B|A)</strong>: these are not the
+    same thing. The probability of testing positive given you have a
+    disease is not the same as the probability of having the disease
+    given a positive test. Mixing these up is known as the
+    <em>prosecutor’s fallacy</em>.</p>
+    <p><strong>Ignoring the prior (base rate neglect)</strong>: even a
+    highly accurate test gives a misleading result if the condition is
+    very rare. A 99% accurate test for a disease affecting 1 in 10,000
+    people still produces mostly false positives on positive tests. The
+    prior <span class="math inline">\(P(A)\)</span> must always be
+    factored in.</p>
+    <p><strong>Thinking the <span class="wikilink"
+    title="See: likelihood ratio">likelihood ratio</span> equals the
+    posterior ratio</strong>: if the likelihood of the data under
+    hypothesis 1 is 5× higher than under hypothesis 2, that does not
+    mean hypothesis 1 is 5× more probable. The ratio of posteriors also
+    depends on the ratio of priors.</p>
+    <p><strong>Thinking the prior always dominates</strong>: with enough
+    data, the likelihood swamps the prior and the posterior is driven
+    almost entirely by the evidence. The prior only dominates when data
+    is scarce.</p>
+    </section>
+    <section id="applications" class="level2">
+    <h2>Applications</h2>
+    <p>Bayes’ rule underpins a large amount of machine learning and
+    statistics:</p>
+    <ul>
+    <li><p><strong><span class="wikilink" title="See: Naive Bayes">Naive
+    Bayes</span> classifiers</strong> (text classification, spam
+    filtering)</p></li>
+    <li><p><strong>Bayesian optimization</strong> (hyperparameter
+    tuning)</p></li>
+    <li><p><strong>Probabilistic graphical models</strong></p></li>
+    <li><p>Any problem that involves reasoning under uncertainty and
+    updating beliefs with new data</p></li>
+    </ul>
+    </section>
+    <section id="example-thompson-sampling" class="level2">
+    <h2>Example: Thompson Sampling</h2>
+    <p>Here I display the use of Bayes rule through a Bayesian
+    <a href="../../hypothesis-testing/ab-testing/multi-arm-bandit/multi-arm-bandit.html">multi-arm
+    bandit</a> known as Thompson sampling.
+    <a href="../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html">Thompson
+    sampling</a> is one of the clearest demonstrations of Bayes’ rule in
+    action. Each arm in the bandit has an unknown reward probability,
+    <span class="math inline">\(\theta\)</span>. We model our belief
+    about <span class="math inline">\(\theta\)</span> with a
+    <strong>Beta distribution</strong>, which acts as the prior. Each
+    time we pull an arm and observe a reward or failure, we update that
+    distribution. the Bayesian update is given by:</p>
+    <p><span class="math display">\[\underbrace{P(\theta \mid
+    \text{data})}_{\text{posterior}} \propto \underbrace{P(\text{data}
+    \mid \theta)}_{\text{likelihood}} \cdot
+    \underbrace{P(\theta)}_{\text{prior}}\]</span></p>
+    <p>Because the <span class="wikilink"
+    title="See: Beta distribution">Beta distribution</span> is the
+    conjugate prior for the <span class="wikilink"
+    title="See: Bernoulli distribution">Bernoulli distribution</span>
+    likelihood, the update is simply:</p>
+    <p><span class="math display">\[\alpha \leftarrow \alpha + 1 \quad
+    \text{(on success)}, \qquad \beta \leftarrow \beta + 1 \quad
+    \text{(on failure)}\]</span></p>
+    <p>The posterior from one round becomes the prior for the next;
+    Bayes’ rule is applied repeatedly. To make this concrete, let’s go
+    through an example. We are testing email subject line C, which
+    starts with no data: <span
+    class="math inline">\(\text{Beta}(1,1)\)</span>. We send the email
+    and the recipient opens it (reward = 1):</p>
+    <table>
+    <colgroup>
+    <col style="width: 36%" />
+    <col style="width: 19%" />
+    <col style="width: 43%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Term</th>
+    <th>Value</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>Prior <span class="math inline">\(P(\theta)\)</span></td>
+    <td><span class="math inline">\(\text{Beta}(1, 1)\)</span></td>
+    <td>flat; we know nothing about C’s open rate yet</td>
+    </tr>
+    <tr>
+    <td>Likelihood <span
+    class="math inline">\(P(\text{data}\mid\theta)\)</span></td>
+    <td>Bernoulli; 1 success</td>
+    <td>one open observed</td>
+    </tr>
+    <tr>
+    <td>Posterior <span class="math inline">\(P(\theta \mid
+    \text{data})\)</span></td>
+    <td><span class="math inline">\(\text{Beta}(2, 1)\)</span></td>
+    <td>belief shifts right; C is probably decent</td>
+    </tr>
+    </tbody>
+    </table>
+    <p>The next round, <span
+    class="math inline">\(\text{Beta}(2,1)\)</span> becomes the new
+    prior. If C gets another open: <span
+    class="math inline">\(\text{Beta}(3,1)\)</span>. A failure: <span
+    class="math inline">\(\text{Beta}(2,2)\)</span>. Each pull is one
+    application of Bayes’ rule. The animation below shows this process
+    running across 200 rounds for three arms simultaneously (true θ =
+    0.3, 0.5, 0.75):</p>
+    <p><img src="../../images/thompson_sampling_bayes.gif" /></p>
+    <p><strong>What to watch:</strong></p>
+    <ul>
+    <li><p><strong>Top row</strong>: each arm’s Beta distribution
+    narrowing and shifting toward its true θ (red dashed line). The
+    posterior becomes more certain as evidence accumulates (bottom
+    right).</p></li>
+    <li><p><strong>Bottom right</strong>: the prior (blue) vs posterior
+    (green) for the arm just pulled.</p></li>
+    <li><p><strong>Bottom left</strong>: Arm 3 dominates pull counts
+    because its distribution confidently sits highest</p></li>
+    </ul>
+    </section>
+    <section id="a-simple-derivation-of-bayes-rule" class="level2">
+    <h2>A Simple Derivation of Bayes’ Rule</h2>
+    <p>Here, a simple way of deriving bayes rule through venn diagrams
+    is shown. <span class="math inline">\(P(A \cap B)\)</span> in the
+    plot below is the same physical region regardless of which direction
+    you approach it from. For those unfamiliar, the symbol “<span
+    class="math inline">\(\cap\)</span>” is a union and it means where
+    there is overlap. Another way to say it is “where A
+    <em><strong>AND</strong></em> B”</p>
+    <p><img src="../../images/bayes_venn.png" /></p>
+    <p>From the definition of conditional probability:</p>
+    <p><span class="math display">\[P(B \mid A) = \frac{P(A \cap
+    B)}{P(A)} \implies P(A \cap B) = P(B \mid A)\,P(A)\]</span></p>
+    <p><span class="math display">\[P(A \mid B) = \frac{P(A \cap
+    B)}{P(B)} \implies P(A \cap B) = P(A \mid B)\,P(B)\]</span></p>
+    <p>Since both expressions equal <span class="math inline">\(P(A \cap
+    B)\)</span>, set them equal and rearrange:</p>
+    <p><span class="math display">\[P(B \mid A)\,P(A) = P(A \mid
+    B)\,P(B) \implies P(A \mid B) = \frac{P(B \mid
+    A)\,P(A)}{P(B)}\]</span></p>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <span></span>
+      <a href="../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html" class="note-nav-link note-nav-next">
+    <span>
+      <span class="note-nav-label">Next &#8594;</span>
+      <span class="note-nav-title">Thompson Sampling</span>
+    </span>
+  </a>
+  </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>
