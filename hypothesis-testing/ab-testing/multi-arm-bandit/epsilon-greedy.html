@@ -182,6 +182,13 @@ Algorithm — Statistics Notes | Joshua Osborne</title>
     .note-body figure { margin: 1.5rem 0; text-align: center; }
     .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
 
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
     /* Back to top */
     #back-to-top {
       position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
@@ -556,7 +563,9 @@ schedules help.</p>
     their true values. The title tracks whether each pull was an explore
     or exploit decision and the per-arm counts (although somewhat hard
     to see).</p>
-    <p><img src="../../../images/epsilon_greedy_convergence.gif" /></p>
+    <video class="note-video" autoplay loop muted playsinline>
+    <source src="../../../images/epsilon_greedy_convergence.webm" type="video/webm">
+    </video>
     <p>The full regret comparison across <span
     class="math inline">\(\varepsilon\)</span> values:</p>
     <p><img src="../../../images/epsilon_greedy.png" /></p>

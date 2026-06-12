@@ -78,12 +78,19 @@ if vault_root:
 with open(src, encoding='utf-8') as f:
     text = f.read()
 
-# 1. Obsidian image embeds: ![[file.png]] -> ![](notesroot + images/file.png)
-text = re.sub(
-    r'!\[\[([^\]]+)\]\]',
-    lambda m: f'![]({notesroot}images/{m.group(1)})',
-    text
-)
+# 1. Obsidian image embeds: ![[file.png]] -> markdown image; ![[file.gif]] -> <video>
+def image_embed(m):
+    filename = m.group(1)
+    if filename.lower().endswith('.gif'):
+        stem = filename[:-4]
+        return (
+            f'\n<video class="note-video" autoplay loop muted playsinline>\n'
+            f'<source src="{notesroot}images/{stem}.webm" type="video/webm">\n'
+            f'</video>\n'
+        )
+    return f'![]({notesroot}images/{filename})'
+
+text = re.sub(r'!\[\[([^\]]+)\]\]', image_embed, text)
 
 # 2. Obsidian wikilinks: [[Page|alias]] or [[Page]] -> link or styled span
 def wikilink(m):

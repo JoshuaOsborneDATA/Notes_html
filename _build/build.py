@@ -68,6 +68,32 @@ PRE        = '_build/preprocess.py'
 NOTES_ROOT = NOTES_OUT if os.path.isdir(VAULT) else '.'
 
 
+def convert_gifs(images_dir):
+    """Convert every GIF in images_dir to WebM + MP4, skipping files already up to date."""
+    try:
+        import imageio_ffmpeg
+    except ImportError:
+        print('imageio-ffmpeg not installed — skipping GIF conversion.')
+        return
+    if not os.path.isdir(images_dir):
+        return
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    for fname in sorted(os.listdir(images_dir)):
+        if not fname.lower().endswith('.gif'):
+            continue
+        gif   = os.path.join(images_dir, fname)
+        stem  = fname[:-4]
+        webm  = os.path.join(images_dir, stem + '.webm')
+        mtime = os.path.getmtime(gif)
+        if not os.path.exists(webm) or os.path.getmtime(webm) < mtime:
+            subprocess.run(
+                [ffmpeg, '-y', '-i', gif,
+                 '-c:v', 'libvpx-vp9', '-crf', '15', '-b:v', '0', '-an', webm],
+                check=True, capture_output=True
+            )
+            print(f'Converted: {fname} -> {stem}.webm')
+
+
 def slugify(s):
     return s.lower().replace(' ', '-')
 
@@ -246,6 +272,8 @@ def build(md_path, yaml_path, out):
     )
     print(f'Built: {out}')
 
+
+convert_gifs(os.path.join(NOTES_ROOT, 'images'))
 
 if os.path.isfile(VAULT):
     # Single-file mode: first arg is a .md file, output flat into NOTES_OUT
