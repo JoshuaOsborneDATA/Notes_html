@@ -25,6 +25,12 @@ import sys
 import re
 import os
 
+try:
+    import imageio_ffmpeg
+    HAS_FFMPEG = True
+except ImportError:
+    HAS_FFMPEG = False
+
 src        = sys.argv[1]
 notesroot  = sys.argv[2] if len(sys.argv) > 2 else ""
 vault_root = sys.argv[3] if len(sys.argv) > 3 else ""
@@ -81,7 +87,7 @@ with open(src, encoding='utf-8') as f:
 # 1. Obsidian image embeds: ![[file.png]] -> markdown image; ![[file.gif]] -> <video>
 def image_embed(m):
     filename = m.group(1)
-    if filename.lower().endswith('.gif'):
+    if filename.lower().endswith('.gif') and HAS_FFMPEG:
         stem = filename[:-4]
         return (
             f'\n<video class="note-video" autoplay loop muted playsinline>\n'

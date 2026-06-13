@@ -69,11 +69,11 @@ NOTES_ROOT = NOTES_OUT if os.path.isdir(VAULT) else '.'
 
 
 def convert_gifs(images_dir):
-    """Convert every GIF in images_dir to WebM + MP4, skipping files already up to date."""
+    """Convert every GIF in images_dir to WebM, skipping files already up to date."""
     try:
         import imageio_ffmpeg
     except ImportError:
-        print('imageio-ffmpeg not installed — skipping GIF conversion.')
+        print('imageio-ffmpeg not installed — GIFs will render as images, not video.')
         return
     if not os.path.isdir(images_dir):
         return
@@ -273,7 +273,8 @@ def build(md_path, yaml_path, out):
     print(f'Built: {out}')
 
 
-convert_gifs(os.path.join(NOTES_ROOT, 'images'))
+images_dir = os.path.join(NOTES_ROOT, 'images')
+convert_gifs(images_dir)
 
 if os.path.isfile(VAULT):
     # Single-file mode: first arg is a .md file, output flat into NOTES_OUT

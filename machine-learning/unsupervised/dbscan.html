@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DBSCAN — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>DBSCAN</h1>
+  <p class="notes-hero-sub">Density-based clustering with arbitrary
+shapes, automatic cluster count, and explicit noise labeling.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>A density-based clustering algorithm that groups points by local
+    density, finds clusters of arbitrary shape without a pre-specified
+    count, and explicitly labels outliers as noise.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p><span class="wikilink" title="See: K-means">K-means</span>
+    defines a cluster as “all points closest to a given centroid.” That
+    forces every cluster to be roughly spherical and similarly sized,
+    and it requires specifying <span class="math inline">\(k\)</span>
+    before training. It also has no concept of noise. Every point,
+    including obvious outliers, is forced into a cluster.</p>
+    <p>DBSCAN is improved upon this: a cluster is a <strong>dense
+    region</strong> of points separated from other dense regions by
+    sparse space. You do not need to know its shape or count in advance.
+    You only need to define what “dense” means using two parameters: a
+    neighborhood radius and a minimum points within a radius
+    threshold.</p>
+    <p>This solves three problems K-means cannot handle:</p>
+    <ol type="1">
+    <li><strong>Arbitrary shapes.</strong> If two clusters are
+    crescent-shaped or interleaved rings, no centroid placement can
+    separate them. Density-based assignment follows the actual geometry
+    of the data.</li>
+    <li><strong>Automatic cluster count.</strong> You supply a density
+    definition, not a <span class="math inline">\(k\)</span>. The number
+    of clusters is an output, not an input.</li>
+    <li><strong>Explicit noise.</strong> Points in sparse regions belong
+    to no cluster. They are labeled noise rather than being absorbed
+    into the nearest center.</li>
+    </ol>
+    <p>The motivating real-world context is spatial data: geographic
+    locations, sensor readings, astronomical objects.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>DBSCAN partitions a dataset <span
+    class="math inline">\(D\)</span> of <span
+    class="math inline">\(n\)</span> points into clusters and noise
+    using two user-supplied parameters: a radius <span
+    class="math inline">\(\varepsilon\)</span> and a density threshold
+    <span class="math inline">\(\text{minPts}\)</span>.</p>
+    <p>The algorithm builds its clusters by expanding from high-density
+    seed points via four cascading definitions. Each definition depends
+    on the one before it.</p>
+    <p>A <strong>cluster</strong> <span class="math inline">\(C
+    \subseteq D\)</span> (this equation is saying that a cluster, <span
+    class="math inline">\(C\)</span>, is a collection of points drawn
+    from the full dataset, <span class="math inline">\(D\)</span>) is a
+    maximal set of density-connected points. Any point that belongs to
+    no cluster is labeled noise.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 34%" />
+    <col style="width: 26%" />
+    <col style="width: 39%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(D\)</span></td>
+    <td>set</td>
+    <td>full dataset of <span class="math inline">\(n\)</span>
+    points</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>number of points in <span class="math inline">\(D\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(p, q, o\)</span></td>
+    <td>points</td>
+    <td>individual data points in <span
+    class="math inline">\(D\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\varepsilon\)</span></td>
+    <td>scalar <span class="math inline">\(&gt; 0\)</span></td>
+    <td>neighborhood radius; controls what counts as “nearby”</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{minPts}\)</span></td>
+    <td>integer <span class="math inline">\(\geq 1\)</span></td>
+    <td>minimum neighborhood size required to qualify as a core
+    point</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(N_\varepsilon(p)\)</span></td>
+    <td>set</td>
+    <td>the <span
+    class="math inline">\(\varepsilon\)</span>-neighborhood of <span
+    class="math inline">\(p\)</span>: all points within distance <span
+    class="math inline">\(\varepsilon\)</span> of <span
+    class="math inline">\(p\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{dist}(p, q)\)</span></td>
+    <td>scalar <span class="math inline">\(\geq 0\)</span></td>
+    <td>distance between <span class="math inline">\(p\)</span> and
+    <span class="math inline">\(q\)</span>; Euclidean by default</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(C_k\)</span></td>
+    <td>set</td>
+    <td>the <span class="math inline">\(k\)</span>-th cluster, a subset
+    of <span class="math inline">\(D\)</span></td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p>DBSCAN has no loss function to minimize. Instead it is defined by
+    four cascading geometric predicates, followed by an expansion
+    algorithm that applies them.</p>
+    <p><strong>Step 1: <span
+    class="math inline">\(\varepsilon\)</span>-neighborhood.</strong></p>
+    <p>The neighborhood of a point is the set of all points within
+    distance <span class="math inline">\(\varepsilon\)</span>:</p>
+    <p><span class="math display">\[N_\varepsilon(p) = \{q \in D \mid
+    \text{dist}(p, q) \leq \varepsilon\}\]</span></p>
+    <p>Note that <span class="math inline">\(p \in
+    N_\varepsilon(p)\)</span> always, since <span
+    class="math inline">\(\text{dist}(p, p) = 0\)</span>.</p>
+    <p><strong>Step 2: <ins>Core point.</ins></strong></p>
+    <p><span class="math inline">\(p\)</span> is a <strong>core
+    point</strong> if its neighborhood is dense enough to seed a
+    cluster:</p>
+    <p><span class="math display">\[|N_\varepsilon(p)| \geq
+    \text{minPts}\]</span></p>
+    <p>A non-core point can still belong to a cluster as a border point,
+    or belong to no cluster at all as noise.</p>
+    <p><strong><ins>Border point.</ins></strong></p>
+    <p><span class="math inline">\(p\)</span> is a <strong>border
+    point</strong> if it is not a core point but falls within <span
+    class="math inline">\(\varepsilon\)</span> of at least one core
+    point:</p>
+    <p><span class="math display">\[|N_\varepsilon(p)| &lt;
+    \text{minPts} \quad \text{and} \quad \exists\, q \in D : p \in
+    N_\varepsilon(q) \text{ and } |N_\varepsilon(q)| \geq
+    \text{minPts}\]</span></p>
+    <p>Just to reiterate, the equation above is saying “p has too few
+    neighbors to be a core point, but there exists some other point q
+    that is a core point and that has p inside its neighborhood.”.
+    Border points are assigned to the cluster of whichever core point
+    first reaches them during expansion. If a border point lies within
+    <span class="math inline">\(\varepsilon\)</span> of core points from
+    two different clusters, the assignment depends on processing order.
+    This is the source of DBSCAN’s non-determinism (see Common
+    Misconceptions).</p>
+    <p><strong>Step 3: Directly density-reachable.</strong></p>
+    <p><span class="math inline">\(q\)</span> is <strong>directly
+    density-reachable</strong> from <span
+    class="math inline">\(p\)</span> when both conditions hold
+    simultaneously:</p>
+    <ol type="1">
+    <li><span class="math inline">\(q \in N_\varepsilon(p)\)</span>:
+    <span class="math inline">\(q\)</span> lies within <span
+    class="math inline">\(\varepsilon\)</span> of <span
+    class="math inline">\(p\)</span></li>
+    <li><span class="math inline">\(|N_\varepsilon(p)| \geq
+    \text{minPts}\)</span>: <span class="math inline">\(p\)</span> is a
+    core point</li>
+    </ol>
+    <p>Only a core point can be a source of direct density-reachability.
+    A border point can be reached but cannot itself propagate the chain
+    forward.</p>
+    <p><strong>Step 4: Density-reachable.</strong></p>
+    <p><span class="math inline">\(q\)</span> is
+    <strong>density-reachable</strong> from <span
+    class="math inline">\(p\)</span> if there exists a finite chain of
+    points <span class="math inline">\(p_1, p_2, \ldots, p_m\)</span>
+    such that:</p>
+    <p><span class="math display">\[p_1 = p, \quad p_m = q, \quad
+    p_{i+1} \text{ is directly density-reachable from } p_i \text{ for
+    all } i\]</span></p>
+    <div class="note-callout">
+    <p><strong>NOTE:</strong> Density-reachability is not symmetric. If
+    <span class="math inline">\(p\)</span> is a core point and <span
+    class="math inline">\(q\)</span> is a border point, then <span
+    class="math inline">\(q\)</span> is density-reachable from <span
+    class="math inline">\(p\)</span>, but <span
+    class="math inline">\(p\)</span> may not be density-reachable from
+    <span class="math inline">\(q\)</span>. The asymmetry arises because
+    a border point cannot propagate the chain. In simple words: a chain
+    can only travel through core points. A border point can be the final
+    destination of a chain but cannot be a stepping stone.</p>
+    </div>
+    <p><strong>Step 5: Density-connected.</strong></p>
+    <p><span class="math inline">\(p\)</span> and <span
+    class="math inline">\(q\)</span> are
+    <strong>density-connected</strong> if there exists some point <span
+    class="math inline">\(o\)</span> such that both are
+    density-reachable from <span class="math inline">\(o\)</span>:</p>
+    <p><span class="math display">\[\exists\, o \in D : p \text{
+    density-reachable from } o \;\wedge\; q \text{ density-reachable
+    from } o\]</span></p>
+    <p>This equation is saying: there exists (<span
+    class="math inline">\(\exists\)</span>) some point <span
+    class="math inline">\(o\)</span> in the dataset (<span
+    class="math inline">\(D\)</span>) such that both <span
+    class="math inline">\(p\)</span> and <span
+    class="math inline">\(q\)</span> can be reached from it.
+    Density-connectedness is symmetric by construction, because the
+    shared source, <span class="math inline">\(o\)</span>, plays the
+    role of the common ancestor.</p>
+    <p><strong>Step 6: Cluster and noise.</strong></p>
+    <p>A <strong>cluster</strong> <span class="math inline">\(C
+    \subseteq D\)</span> is a non-empty set satisfying two properties
+    simultaneously:</p>
+    <ul>
+    <li><p><em>Maximality</em>: if <span class="math inline">\(p \in
+    C\)</span> and <span class="math inline">\(q\)</span> is
+    density-reachable from <span class="math inline">\(p\)</span>, then
+    <span class="math inline">\(q \in C\)</span></p></li>
+    <li><p><em>Connectivity</em>: every pair <span
+    class="math inline">\(p, q \in C\)</span> is
+    density-connected</p></li>
+    </ul>
+    <p>A point <span class="math inline">\(p\)</span> is
+    <strong>noise</strong> if it belongs to no cluster. It is neither a
+    core point nor a border point.</p>
+    <p><strong>Step 7: Algorithm procedure.</strong></p>
+    <p>The algorithm iterates over all points, expanding new clusters
+    from every freshly discovered core point:</p>
+    <ol type="1">
+    <li>Mark all points as unvisited.</li>
+    <li>For each unvisited point <span class="math inline">\(p\)</span>:
+    <ul>
+    <li>Mark <span class="math inline">\(p\)</span> as visited.</li>
+    <li>Compute <span
+    class="math inline">\(N_\varepsilon(p)\)</span>.</li>
+    <li>If <span class="math inline">\(|N_\varepsilon(p)| &lt;
+    \text{minPts}\)</span>: tentatively mark <span
+    class="math inline">\(p\)</span> as noise.</li>
+    <li>Otherwise: start a new cluster <span
+    class="math inline">\(C\)</span> and call
+    <strong>Expand-Cluster</strong><span class="math inline">\((p,
+    C)\)</span>.</li>
+    </ul></li>
+    <li><strong>Expand-Cluster</strong><span class="math inline">\((p,
+    C)\)</span>:
+    <ul>
+    <li>Add <span class="math inline">\(p\)</span> to <span
+    class="math inline">\(C\)</span>.</li>
+    <li>Maintain a queue <span class="math inline">\(S =
+    N_\varepsilon(p)\)</span>.</li>
+    <li>For each point <span class="math inline">\(q \in S\)</span>:
+    <ul>
+    <li>If <span class="math inline">\(q\)</span> is unvisited: mark
+    <span class="math inline">\(q\)</span> visited; compute <span
+    class="math inline">\(N_\varepsilon(q)\)</span>; if <span
+    class="math inline">\(|N_\varepsilon(q)| \geq
+    \text{minPts}\)</span>, add all points in <span
+    class="math inline">\(N_\varepsilon(q)\)</span> to <span
+    class="math inline">\(S\)</span>.</li>
+    <li>If <span class="math inline">\(q\)</span> is not yet assigned to
+    any cluster: add <span class="math inline">\(q\)</span> to <span
+    class="math inline">\(C\)</span> (this also reclassifies a
+    noise-labeled point to a border point).</li>
+    </ul></li>
+    </ul></li>
+    </ol>
+    <p><strong>Time complexity.</strong> <span
+    class="math inline">\(O(n^2)\)</span> with a brute-force distance
+    matrix. With a spatial index (<span class="wikilink"
+    title="See: k-d tree">k-d tree</span> or <span class="wikilink"
+    title="See: ball tree">ball tree</span>), each neighborhood query
+    costs <span class="math inline">\(O(\log n)\)</span>, giving <span
+    class="math inline">\(O(n \log n)\)</span> overall.</p>
+    <p><strong>Space complexity.</strong> <span
+    class="math inline">\(O(n)\)</span> for the spatial index and the
+    visited/label arrays, regardless of the number of clusters
+    found.</p>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p><strong>Setup.</strong> Eight 2D points labeled A–H, using <span
+    class="math inline">\(\varepsilon = 2\)</span> and <span
+    class="math inline">\(\text{minPts} = 3\)</span>.</p>
+    <table>
+    <thead>
+    <tr>
+    <th>Point</th>
+    <th>Coordinates</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>A</td>
+    <td><span class="math inline">\((0, 0)\)</span></td>
+    </tr>
+    <tr>
+    <td>B</td>
+    <td><span class="math inline">\((1, 0)\)</span></td>
+    </tr>
+    <tr>
+    <td>C</td>
+    <td><span class="math inline">\((0, 1)\)</span></td>
+    </tr>
+    <tr>
+    <td>D</td>
+    <td><span class="math inline">\((1, 1)\)</span></td>
+    </tr>
+    <tr>
+    <td>E</td>
+    <td><span class="math inline">\((5, 5)\)</span></td>
+    </tr>
+    <tr>
+    <td>F</td>
+    <td><span class="math inline">\((6, 5)\)</span></td>
+    </tr>
+    <tr>
+    <td>G</td>
+    <td><span class="math inline">\((5, 6)\)</span></td>
+    </tr>
+    <tr>
+    <td>H</td>
+    <td><span class="math inline">\((10, 0)\)</span></td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Step 1: Compute <span
+    class="math inline">\(N_\varepsilon\)</span> for each
+    point.</strong></p>
+    <p>Within the first group: <span
+    class="math inline">\(\text{dist}(A, B) = 1\)</span>, <span
+    class="math inline">\(\text{dist}(A, C) = 1\)</span>, <span
+    class="math inline">\(\text{dist}(A, D) = \sqrt{2} \approx
+    1.41\)</span>. All are <span class="math inline">\(\leq \varepsilon
+    = 2\)</span>.</p>
+    <p>The nearest point outside {A,B,C,D} to any of them is E, with
+    <span class="math inline">\(\text{dist}(A, E) = \sqrt{50} \approx
+    7.07 &gt; 2\)</span>. The two groups are well-separated.</p>
+    <p>Within the second group: <span
+    class="math inline">\(\text{dist}(E, F) = 1\)</span>, <span
+    class="math inline">\(\text{dist}(E, G) = 1\)</span>, <span
+    class="math inline">\(\text{dist}(F, G) = \sqrt{2} \approx
+    1.41\)</span>. All are <span class="math inline">\(\leq
+    2\)</span>.</p>
+    <p>Point H: the nearest other point is B with <span
+    class="math inline">\(\text{dist}(H, B) = 9 &gt; 2\)</span>. H has
+    no neighbors.</p>
+    <table>
+    <thead>
+    <tr>
+    <th>Point</th>
+    <th><span class="math inline">\(N_\varepsilon\)</span></th>
+    <th><span class="math inline">\(\lvert N_\varepsilon
+    \rvert\)</span></th>
+    <th>Core?</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>A</td>
+    <td>{A, B, C, D}</td>
+    <td>4</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>B</td>
+    <td>{A, B, C, D}</td>
+    <td>4</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>C</td>
+    <td>{A, B, C, D}</td>
+    <td>4</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>D</td>
+    <td>{A, B, C, D}</td>
+    <td>4</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>E</td>
+    <td>{E, F, G}</td>
+    <td>3</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>F</td>
+    <td>{E, F, G}</td>
+    <td>3</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>G</td>
+    <td>{E, F, G}</td>
+    <td>3</td>
+    <td>yes</td>
+    </tr>
+    <tr>
+    <td>H</td>
+    <td>{H}</td>
+    <td>1</td>
+    <td>no</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Step 2: Expand clusters.</strong></p>
+    <p>Start at A (unvisited, core). Create Cluster 1. Add {A, B, C, D}
+    to the queue. Each of B, C, D is also a core point, but their
+    neighborhoods add no new points beyond what is already queued.
+    Cluster 1 = {A, B, C, D}.</p>
+    <p>Move to E (unvisited, core). Create Cluster 2. Add {E, F, G}.
+    Each is a core point. No new points discovered. Cluster 2 = {E, F,
+    G}.</p>
+    <p>Move to H (unvisited, not core). Tentatively noise. H is never
+    reached from any core point. Noise = {H}.</p>
+    <p><strong>Result.</strong></p>
+    <table>
+    <thead>
+    <tr>
+    <th>Assignment</th>
+    <th>Points</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>Cluster 1</td>
+    <td>A, B, C, D</td>
+    </tr>
+    <tr>
+    <td>Cluster 2</td>
+    <td>E, F, G</td>
+    </tr>
+    <tr>
+    <td>Noise</td>
+    <td>H</td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Two clusters were found automatically. No <span
+    class="math inline">\(k\)</span> was specified.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>Think of fire spreading through dry grass. A spark lands on a
+    core point. The fire spreads to all points within <span
+    class="math inline">\(\varepsilon\)</span>. At each newly reached
+    point, if local density is high enough, the fire keeps spreading
+    outward. It stops at border points: they ignite but do not spread
+    further. Isolated points in sparse regions never catch.</p>
+    <p>This metaphor explains why DBSCAN handles complex shapes. The
+    expansion follows the actual geometry of the data in a way that a
+    centroid cannot.</p>
+    <p><strong>Shape advantage over K-means.</strong> The figure below
+    uses two concentric rings. K-means (left) has no concept of shape.
+    DBSCAN (center) finds both rings as separate clusters by following
+    the density structure. The right panel shows the same result colored
+    by point type: ring points are overwhelmingly core points, the few
+    border points sit at gap edges, and the scattered background points
+    are labeled as noise.</p>
+    <p><img src="../../images/dbscan.png" /></p>
+    <p>Three limiting regimes to keep in mind:</p>
+    <ul>
+    <li><strong><span class="math inline">\(\varepsilon\)</span> too
+    small -</strong> Almost no point has enough neighbors. Nearly every
+    point becomes noise.</li>
+    <li><strong><span class="math inline">\(\varepsilon\)</span> too
+    large -</strong> All points fall into each other’s neighborhoods.
+    Everything merges into one cluster.</li>
+    <li><strong>Unequal densities -</strong> A <span
+    class="math inline">\((\varepsilon, \text{minPts})\)</span> pair
+    tuned for a dense cluster misses a sparser one, and a pair tuned for
+    the sparse cluster merges dense neighbors together. This
+    single-density limitation is the core motivation for <span
+    class="wikilink" title="See: HDBScan">HDBScan</span>.</li>
+    </ul>
+    <p>The figure below shows all three ε regimes on the same ring
+    dataset with minPts fixed at 5 (on that note: a minimum of three
+    points is recommended).</p>
+    <p><img src="../../images/dbscan_parameters.png" /></p>
+    <p><strong>What to read from the parameter figure:</strong> At <span
+    class="math inline">\(\varepsilon = 0.07\)</span> the neighborhood
+    radius is too tight to bridge even adjacent ring points, so the
+    algorithm sees 485 isolated noise points and finds no clusters. At
+    <span class="math inline">\(\varepsilon = 0.35\)</span> the radius
+    comfortably connects ring neighbors, finds both rings as distinct
+    clusters, and isolates the scattered background as noise. At <span
+    class="math inline">\(\varepsilon = 1.60\)</span> the radius bridges
+    the gap between the two rings, merging everything into a single
+    cluster with zero noise. The algorithm has lost the ability to
+    distinguish inner from outer.</p>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“DBSCAN is parameter-free.”</strong> DBSCAN requires both
+    <span class="math inline">\(\varepsilon\)</span> and <span
+    class="math inline">\(\text{minPts}\)</span>. Neither has a
+    universal default. A standard heuristic is to plot the sorted <span
+    class="math inline">\(k\)</span>-nearest-neighbor distances (with
+    <span class="math inline">\(k = \text{minPts} - 1\)</span>) and look
+    for an elbow, but this is a guide, not an automatic rule.</p>
+    <p><strong>“Border points are core points.”</strong> A border point
+    lies within the <span
+    class="math inline">\(\varepsilon\)</span>-neighborhood of a core
+    point but does not itself have enough neighbors to be a core point.
+    It belongs to the cluster but cannot expand it further.</p>
+    <p><strong>“DBSCAN always produces the same clusters.”</strong> The
+    assignment of a border point that is reachable from two different
+    clusters depends on processing order. That border point is assigned
+    to whichever cluster reaches it first. Core points and noise are
+    deterministic. Border points at cluster boundaries are not. In
+    practice this rarely changes the result, but the guarantee of
+    uniqueness does not exist.</p>
+    <p><strong>“Noise means the point is unimportant.”</strong> Noise in
+    DBSCAN means a point fell outside the <span
+    class="math inline">\(\varepsilon\)</span>-neighborhood of every
+    core point. Noise points are often exactly the anomalies you are
+    looking for, making DBSCAN a useful tool for outlier detection even
+    when the cluster assignments are not the primary goal.</p>
+    <p><strong>“DBSCAN works well in high dimensions.”</strong> As
+    dimensionality grows, Euclidean distances concentrate around their
+    mean and nearby and far-away points become nearly indistinguishable
+    (see the <span class="wikilink"
+    title="See: curse of dimensionality">curse of dimensionality</span>.
+    The <span class="math inline">\(\varepsilon\)</span>-neighborhood
+    from Step 1 degrades rapidly. Consider dimensionality reduction
+    before applying DBSCAN to high-dimensional data.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><span class="wikilink" title="See: K-means">K-means</span>, <span
+    class="wikilink" title="See: HDBScan">HDBScan</span>, <span
+    class="wikilink" title="See: Hierarchical clustering">Hierarchical
+    clustering</span>, <span class="wikilink"
+    title="See: C-means">C-means</span>, <span class="wikilink"
+    title="See: bias-variance tradeoff">bias-variance tradeoff</span>,
+    <span class="wikilink" title="See: k-d tree">k-d tree</span>, <span
+    class="wikilink" title="See: ball tree">ball tree</span></p>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <p>Ester, M., Kriegel, H.-P., Sander, J., &amp; Xu, X. (1996). A
+    density-based algorithm for discovering clusters in large spatial
+    databases with noise. <em>Proceedings of the 2nd International
+    Conference on Knowledge Discovery and Data Mining (KDD-96)</em>,
+    226–231. AAAI Press.</p>
+    <p>Schubert, E., Sander, J., Ester, M., Kriegel, H.-P., &amp; Xu, X.
+    (2017). DBSCAN revisited, revisited: Why and how you should (still)
+    use DBSCAN. <em>ACM Transactions on Database Systems</em>, 42(3),
+    1–21.</p>
+    <p><strong>sklearn documentation:</strong>
+    https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html</p>
+    <p><strong>StatQuest video:</strong>
+    https://www.youtube.com/watch?v=RDZUdRSDOok&amp;pp=ygUQc3RhdHF1ZXN0IGRic2Nhbg%3D%3D</p>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <span></span>
+    </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>

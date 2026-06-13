@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Linear
+Regression — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../../../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>Simple Linear Regression</h1>
+  <p class="notes-hero-sub">OLS derivation, model assumptions, standard
+errors, t-test, and R² from scratch.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#model-assumptions" id="toc-model-assumptions">Model
+    Assumptions</a></li>
+    <li><a href="#inference-on-the-coefficients"
+    id="toc-inference-on-the-coefficients">Inference on the
+    Coefficients</a></li>
+    <li><a href="#standard-errors"
+    id="toc-standard-errors"><strong><ins>Standard
+    errors</ins></strong></a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>A straightforward way of predicting a dependent variable from a
+    single predictor.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>The primary driving factor behind linear regression is the
+    ability to predict one value from another. Given a set set of points
+    <span
+    class="math inline">\((x_1,y_1),(x_2,y_2),...,(x_n,y_n)\)</span> ,
+    we want to find a function that approximates y. The simplest
+    solution? A line. You may ask, what are the benefits of using a line
+    as opposed to a polynomial or some other function.</p>
+    <p>Well it is easily interpretable. It is easy to see the effect on
+    the dependent variable (y) when the independent variable (x) moves.
+    Because it only has two parameters, it is also easy to estimate.
+    Also, many relationships are close enough to being linear (look at
+    the fit between the body mass and flipper length of penguins in
+    <span class="wikilink" title="See: What is machine learning">What is
+    machine learning</span>). It also has an analytical answer for the
+    best fit line.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>Simple linear regression models the conditional expectation of
+    <span class="math inline">\(Y\)</span> given <span
+    class="math inline">\(X = x\)</span> as a straight line:</p>
+    <p><span class="math display">\[y_i = \beta_0 + \beta_1 x_i +
+    \varepsilon_i, \quad i = 1, \ldots, n\]</span></p>
+    <p>where <span class="math inline">\(\beta_0\)</span> is the
+    intercept, <span class="math inline">\(\beta_1\)</span> is the
+    slope, and <span class="math inline">\(\varepsilon_i\)</span> is a
+    mean-zero random error. OLS estimates <span
+    class="math inline">\(\beta_0\)</span> and <span
+    class="math inline">\(\beta_1\)</span> by minimising the residual
+    sum of squares.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 25%" />
+    <col style="width: 6%" />
+    <col style="width: 68%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(y_i\)</span></td>
+    <td>scalar</td>
+    <td>observed response for the <span
+    class="math inline">\(i\)</span>-th data point</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(x_i\)</span></td>
+    <td>scalar</td>
+    <td>observed predictor for the <span
+    class="math inline">\(i\)</span>-th data point</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(X\)</span></td>
+    <td>vector</td>
+    <td>the full collection of predictor observations <span
+    class="math inline">\((x_1, x_2, \ldots, x_n)\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{y}_i\)</span></td>
+    <td>scalar</td>
+    <td>model prediction for observation <span
+    class="math inline">\(i\)</span>, equal to <span
+    class="math inline">\(\beta_0 + \beta_1 x_i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\varepsilon_i\)</span></td>
+    <td>scalar</td>
+    <td>true unobservable error for observation <span
+    class="math inline">\(i\)</span>; <span
+    class="math inline">\(\mathbb{E}[\varepsilon_i] = 0\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(e_i\)</span></td>
+    <td>scalar</td>
+    <td>observed residual, <span class="math inline">\(e_i = y_i -
+    \hat{y}_i\)</span>; the computable stand-in for <span
+    class="math inline">\(\varepsilon_i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\beta_0, \beta_1\)</span></td>
+    <td>scalars</td>
+    <td>true intercept and slope parameters</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{\beta}_0,
+    \hat{\beta}_1\)</span></td>
+    <td>scalars</td>
+    <td>OLS estimates of <span class="math inline">\(\beta_0\)</span>
+    and <span class="math inline">\(\beta_1\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>number of observations</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\bar{x}, \bar{y}\)</span></td>
+    <td>scalars</td>
+    <td>sample means of the predictor and response</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(S_{xx}\)</span></td>
+    <td>scalar</td>
+    <td>sum of squared deviations of <span
+    class="math inline">\(x\)</span>: <span
+    class="math inline">\(\sum(x_i-\bar x)^2 = (n-1)s_x^2\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\sigma^2\)</span></td>
+    <td>scalar</td>
+    <td>variance of the true errors; estimated by <span
+    class="math inline">\(\hat{\sigma}^2 =
+    \text{RSS}/(n-2)\)</span></td>
+    </tr>
+    <tr>
+    <td><span
+    class="math inline">\(\text{SE}(\hat{\beta}_j)\)</span></td>
+    <td>scalar</td>
+    <td>standard error of OLS estimate <span
+    class="math inline">\(\hat{\beta}_j\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(t\)</span></td>
+    <td>scalar</td>
+    <td>t-statistic used to test <span class="math inline">\(H_0:
+    \beta_1 = 0\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{TSS}\)</span></td>
+    <td>scalar</td>
+    <td>total sum of squares, <span class="math inline">\(\sum(y_i -
+    \bar{y})^2\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(R^2\)</span></td>
+    <td>scalar</td>
+    <td>proportion of variance in <span class="math inline">\(Y\)</span>
+    explained by the model</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p>The key equation for doing a linear fit is the following: <span
+    class="math display">\[Y \approx \beta_0 + \beta_1X\]</span></p>
+    <p>There is an important distinction between the true error <span
+    class="math inline">\(\varepsilon_i\)</span> and the observed
+    residual <span class="math inline">\(e_i\)</span>. The true error
+    <span class="math inline">\(\varepsilon_i = y_i - (\beta_0 + \beta_1
+    x_i)\)</span> involves the unknown true parameters and is never
+    observable. The residual <span class="math inline">\(e_i\)</span>
+    substitutes the fitted values and is what we can actually
+    compute:</p>
+    <p><span class="math display">\[e_i = y_i - \hat{y}_i = y_i -
+    \hat\beta_0 - \hat\beta_1 x_i\]</span> Using the error we can also
+    define the <span class="wikilink"
+    title="See: Residual Sum Squared">Residual Sum Squared</span>: <span
+    class="math display">\[RSS=e_1^2+e_2^2+...+e_n^2\]</span> Using The
+    RSS we can now find the analytical solution for the best fit line
+    for our simple linear fit. Let’s first start by taking the
+    derivative of the RSS with respect to <span
+    class="math inline">\(\beta_0\)</span>: <span
+    class="math display">\[\frac{d(RSS)}{d\beta_o}=0=-2\sum_{i=1}^{n}(y_i-\beta_0-\beta_1x_i)\]</span>
+    <span
+    class="math display">\[0=\sum_{i=1}^{n}y_i-n\beta_0-\sum_{i=1}^{n}\beta_1x_i\]</span>
+    <span
+    class="math display">\[n\beta_0=\sum_{i=1}^{n}y_i-\sum_{i=1}^{n}\beta_1x_i\]</span>
+    <span class="math display">\[\beta_0=\bar y-\beta_1 \bar x\]</span>
+    The above equation is the analytical solution for the <span
+    class="math inline">\(\beta_0\)</span> parameter. Now, we move on to
+    deriving <span class="math inline">\(\beta_1\)</span>: <span
+    class="math display">\[\frac{d(RSS)}{d\beta_1}=0=-2\sum_{i=1}^{n}(y_i-\beta_0-\beta_1x_i)x_i\]</span>
+    <span
+    class="math display">\[\frac{d(RSS)}{d\beta_1}=0=\sum_{i=1}^{n}(y_i-(\bar
+    y-\beta_1 \bar x)-\beta_1x_i)x_i\]</span> <span
+    class="math display">\[\frac{d(RSS)}{d\beta_1}=0=\sum_{i=1}^{n}(y_i-\bar
+    y)x_i - \beta_1 \sum_{i=1}^{n}(x_i - \bar x)x_i\]</span> <span
+    class="math display">\[\beta_1 \sum_{i=1}^{n}(x_i - \bar x)x_i =
+    \sum_{i=1}^{n}(y_i-\bar y)x_i\]</span> I now use the fact that the
+    sum of the deviation from the mean is equal to zero, that is <span
+    class="math inline">\(\sum_{i=1}^{n}x_i-\bar x =0\)</span>:</p>
+    <p><span class="math display">\[\beta_1 \sum_{i=1}^{n}(x_i - \bar
+    x)x_i - \bar x \sum_{i=1}^{n}(x_i - \bar x) =
+    \sum_{i=1}^{n}(y_i-\bar y)x_i\]</span> <span
+    class="math display">\[\beta_1 \sum_{i=1}^{n}(x_i - \bar x)^2 =
+    \sum_{i=1}^{n}(y_i-\bar y)x_i\]</span> Now, you can check this your
+    self by multiplying it out, but <span
+    class="math inline">\((y_i-\bar y)x_i = (y_i-\bar y)(x_i - \bar
+    x)\)</span>, and so now we have: <span
+    class="math display">\[\beta_1 \sum_{i=1}^{n}(x_i - \bar x)^2 =
+    \sum_{i=1}^{n}(y_i-\bar y)(x_i - \bar x)\]</span> <span
+    class="math display">\[\beta_1 = \frac{\sum_{i=1}^{n}(y_i-\bar
+    y)(x_i - \bar x)}{\sum_{i=1}^{n}(x_i - \bar x)^2}\]</span> And with
+    that we have shown how to analytically derive the values for <span
+    class="math inline">\(\beta_0\)</span> and <span
+    class="math inline">\(\beta_1\)</span>.</p>
+    </section>
+    <section id="model-assumptions" class="level2">
+    <h2>Model Assumptions</h2>
+    <p>OLS requires the following conditions to produce valid estimates
+    and inference.</p>
+    <table>
+    <colgroup>
+    <col style="width: 10%" />
+    <col style="width: 40%" />
+    <col style="width: 50%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>#</th>
+    <th>Assumption</th>
+    <th>What it means</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td><strong>Linearity</strong></td>
+    <td><span class="math inline">\(\mathbb{E}[Y \mid X = x] = \beta_0 +
+    \beta_1 x\)</span>; the true relationship is linear in <span
+    class="math inline">\(x\)</span></td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td><strong>Independence</strong></td>
+    <td>observations <span class="math inline">\((x_i, y_i)\)</span> are
+    independent of each other</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td><strong>Homoscedasticity</strong></td>
+    <td><span class="math inline">\(\text{Var}(\varepsilon_i) =
+    \sigma^2\)</span> is constant across all <span
+    class="math inline">\(i\)</span></td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td><strong>Zero mean errors</strong></td>
+    <td><span class="math inline">\(\mathbb{E}[\varepsilon_i] =
+    0\)</span> for all <span class="math inline">\(i\)</span></td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td><strong>Normality</strong></td>
+    <td><span class="math inline">\(\varepsilon_i \sim \mathcal{N}(0,
+    \sigma^2)\)</span></td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Assumptions 1-4 are the Gauss-Markov conditions: under these
+    alone, OLS is the Best Linear Unbiased Estimator (see <span
+    class="wikilink" title="See: Gauss-Markov Theorem">Gauss-Markov
+    Theorem</span>). Assumption 5 is additionally required for the
+    t-tests and confidence intervals below to be exact in finite
+    samples. In large samples the t-distribution results hold
+    approximately by the Central Limit Theorem even without
+    normality.</p>
+    </section>
+    <section id="inference-on-the-coefficients" class="level2">
+    <h2>Inference on the Coefficients</h2>
+    <p>Fitting a line gives you <span
+    class="math inline">\(\hat\beta_0\)</span> and <span
+    class="math inline">\(\hat\beta_1\)</span>, but these are estimates
+    computed from one sample. Inference quantifies how uncertain those
+    estimates are.</p>
+    </section>
+    <section id="standard-errors" class="level2">
+    <h2><strong><ins>Standard errors</ins></strong></h2>
+    <p>Define <span class="math inline">\(S_{xx}\)</span> as the sum of
+    squared deviations of <span class="math inline">\(x\)</span> from
+    its mean:</p>
+    <p><span class="math display">\[S_{xx} = \sum_{i=1}^{n}(x_i - \bar
+    x)^2\]</span></p>
+    <p>This is not the sample variance. The sample variance is <span
+    class="math inline">\(s_x^2 = S_{xx}/(n-1)\)</span>, so <span
+    class="math inline">\(S_{xx} = (n-1)\,s_x^2\)</span>. The <span
+    class="math inline">\((n-1)\)</span> cancels between numerator and
+    denominator when writing <span class="math inline">\(\beta_1 =
+    {\text{Cov}}(X,Y)\,/\,{\text{Var}}(X)\)</span>, which is why both
+    forms are equivalent.</p>
+    <p>Both derivations follow the same idea: write the estimator as a
+    linear combination of the <span
+    class="math inline">\(y_i\)</span>’s, then apply the variance
+    formula using independence and homoscedasticity.</p>
+    <p>Start by expanding the numerator of <span
+    class="math inline">\(\hat\beta_1\)</span> and dropping <span
+    class="math inline">\(\bar y\)</span>. The <span
+    class="math inline">\(\bar y\)</span> term vanishes because the
+    deviations from the mean always sum to zero:</p>
+    <p><span class="math display">\[\sum_{i=1}^{n}(x_i - \bar x)(y_i -
+    \bar y) = \sum_{i=1}^{n}(x_i-\bar x)y_i - \bar
+    y\underbrace{\sum_{i=1}^{n}(x_i-\bar x)}_{=\,0} =
+    \sum_{i=1}^{n}(x_i-\bar x)y_i\]</span></p>
+    <p>This lets us write <span
+    class="math inline">\(\hat\beta_1\)</span> as a weighted sum of the
+    responses:</p>
+    <p><span class="math display">\[\hat\beta_1 =
+    \frac{\sum_{i=1}^{n}(x_i-\bar x)\,y_i}{S_{xx}} = \sum_{i=1}^{n}
+    c_i\, y_i, \quad c_i = \frac{x_i - \bar x}{S_{xx}}\]</span></p>
+    <p>Since the <span class="math inline">\(y_i\)</span> are
+    independent with <span class="math inline">\(\text{Var}(y_i) =
+    \sigma^2\)</span>:</p>
+    <p><span class="math display">\[\text{Var}(\hat\beta_1) =
+    \sum_{i=1}^{n} c_i^2\,\sigma^2 = \sigma^2
+    \sum_{i=1}^{n}\frac{(x_i-\bar x)^2}{S_{xx}^2} = \sigma^2 \cdot
+    \frac{S_{xx}}{S_{xx}^2}\]</span></p>
+    <p><span class="math display">\[\boxed{\text{SE}(\hat\beta_1)^2 =
+    \frac{\sigma^2}{S_{xx}} = \frac{\sigma^2}{\sum_{i=1}^{n}(x_i - \bar
+    x)^2}}\]</span></p>
+    <p><em>Now for <span
+    class="math inline">\(\text{Var}(\hat\beta_0)\)</span></em>:</p>
+    <p>Since <span class="math inline">\(\hat\beta_0 = \bar y -
+    \hat\beta_1 \bar x\)</span>, it is also linear in the <span
+    class="math inline">\(y_i\)</span>’s:</p>
+    <p><span class="math display">\[\hat\beta_0 =
+    \sum_{i=1}^{n}\frac{1}{n}\,y_i - \bar x\sum_{i=1}^{n} c_i\, y_i =
+    \sum_{i=1}^{n} d_i\, y_i, \quad d_i = \frac{1}{n} - \frac{\bar x(x_i
+    - \bar x)}{S_{xx}}\]</span></p>
+    <p>Expanding <span class="math inline">\(\sum d_i^2\)</span> and
+    using <span class="math inline">\(\sum(x_i - \bar x) =
+    0\)</span>:</p>
+    <p><span class="math display">\[\sum_{i=1}^{n} d_i^2 =
+    \underbrace{\sum_{i=1}^{n}\frac{1}{n^2}}_{1/n} - \frac{2\bar
+    x}{nS_{xx}}\underbrace{\sum_{i=1}^{n}(x_i-\bar x)}_{=\,0} +
+    \frac{\bar x^2}{S_{xx}^2}\underbrace{\sum_{i=1}^{n}(x_i-\bar
+    x)^2}_{=\,S_{xx}} = \frac{1}{n} + \frac{\bar
+    x^2}{S_{xx}}\]</span></p>
+    <p><span class="math display">\[\boxed{\text{SE}(\hat\beta_0)^2 =
+    \sigma^2\!\left[\frac{1}{n} + \frac{\bar x^2}{\sum_{i=1}^{n}(x_i -
+    \bar x)^2}\right]}\]</span></p>
+    <p>In practice <span class="math inline">\(\sigma^2\)</span> is
+    unknown and is replaced by <span class="math inline">\(\hat\sigma^2
+    = \text{RSS}/(n-2)\)</span>. The denominator is <span
+    class="math inline">\(n-2\)</span> because fitting a line uses up
+    two degrees of freedom (<span class="math inline">\(\beta_0\)</span>
+    and <span class="math inline">\(\beta_1\)</span>).</p>
+    <p><strong>t-test for the slope</strong></p>
+    <p>The most important test in simple linear regression is whether
+    the predictor is useful at all:</p>
+    <p><span class="math display">\[H_0: \beta_1 = 0 \quad \text{vs}
+    \quad H_1: \beta_1 \neq 0\]</span></p>
+    <p>The test statistic is:</p>
+    <p><span class="math display">\[t =
+    \frac{\hat\beta_1}{\text{SE}(\hat\beta_1)} \sim t_{n-2} \quad
+    \text{under } H_0\]</span></p>
+    <p>A small p-value gives evidence that <span
+    class="math inline">\(\beta_1 \neq 0\)</span>, meaning <span
+    class="math inline">\(x\)</span> carries real information about
+    <span class="math inline">\(y\)</span>.</p>
+    <p><strong>Confidence intervals</strong></p>
+    <p>A 95% <span class="wikilink"
+    title="See: confidence intervals">confidence interval</span> for
+    each parameter is:</p>
+    <p><span class="math display">\[\hat\beta_j \pm t_{n-2,\,0.025}
+    \cdot \text{SE}(\hat\beta_j)\]</span></p>
+    <p><strong>Goodness of fit: <span
+    class="math inline">\(R^2\)</span></strong></p>
+    <p>The standard summary of fit is:</p>
+    <p><span class="math display">\[R^2 = 1 -
+    \frac{\text{RSS}}{\text{TSS}}, \quad \text{TSS} = \sum_{i=1}^{n}(y_i
+    - \bar y)^2\]</span></p>
+    <p><span class="math inline">\(R^2 \in [0, 1]\)</span> measures the
+    fraction of variance in <span class="math inline">\(Y\)</span> that
+    the model explains. In simple linear regression specifically, <span
+    class="math inline">\(R^2 = r^2\)</span> where <span
+    class="math inline">\(r\)</span> is the <span class="wikilink"
+    title="See: Pearson correlation">Pearson correlation</span> between
+    <span class="math inline">\(X\)</span> and <span
+    class="math inline">\(Y\)</span>. For a full treatment, including
+    limitations and generalizations to other models, see <span
+    class="wikilink" title="See: R-squared">R-squared</span>.</p>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p>Suppose we observe five paired measurements:</p>
+    <table>
+    <thead>
+    <tr>
+    <th><span class="math inline">\(i\)</span></th>
+    <th><span class="math inline">\(x_i\)</span></th>
+    <th><span class="math inline">\(y_i\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>1</td>
+    <td>2</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>2</td>
+    <td>4</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>3</td>
+    <td>5</td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td>4</td>
+    <td>4</td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td>5</td>
+    <td>5</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Step 1 - compute the means.</strong></p>
+    <p><span class="math display">\[\bar x = \frac{1+2+3+4+5}{5} = 3,
+    \qquad \bar y = \frac{2+4+5+4+5}{5} = 4\]</span></p>
+    <p><strong>Step 2 - compute <span
+    class="math inline">\(\beta_1\)</span>.</strong></p>
+    <p><span class="math display">\[\sum_{i=1}^{5}(x_i - \bar x)(y_i -
+    \bar y) = (-2)(-2)+(-1)(0)+(0)(1)+(1)(0)+(2)(1) = 6\]</span></p>
+    <p><span class="math display">\[\sum_{i=1}^{5}(x_i - \bar x)^2 =
+    4+1+0+1+4 = 10\]</span></p>
+    <p><span class="math display">\[\beta_1 = \frac{6}{10} =
+    0.6\]</span></p>
+    <p><strong>Step 3 - compute <span
+    class="math inline">\(\beta_0\)</span>.</strong></p>
+    <p><span class="math display">\[\beta_0 = \bar y - \beta_1 \bar x =
+    4 - 0.6 \times 3 = 2.2\]</span></p>
+    <p><strong>Result:</strong> <span class="math inline">\(\hat y = 2.2
+    + 0.6\,x\)</span>.</p>
+    <p>A one-unit increase in <span class="math inline">\(x\)</span> is
+    associated with an average increase of <span
+    class="math inline">\(0.6\)</span> in <span
+    class="math inline">\(y\)</span>. When <span class="math inline">\(x
+    = 0\)</span> the model predicts <span class="math inline">\(y =
+    2.2\)</span>.</p>
+    <p><strong>Step 4 - compute the residuals and RSS.</strong></p>
+    <table>
+    <colgroup>
+    <col style="width: 5%" />
+    <col style="width: 45%" />
+    <col style="width: 38%" />
+    <col style="width: 11%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th><span class="math inline">\(i\)</span></th>
+    <th><span class="math inline">\(\hat{y}_i = 2.2 +
+    0.6x_i\)</span></th>
+    <th><span class="math inline">\(e_i = y_i - \hat{y}_i\)</span></th>
+    <th><span class="math inline">\(e_i^2\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>2.8</td>
+    <td><span class="math inline">\(-0.8\)</span></td>
+    <td>0.64</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>3.4</td>
+    <td><span class="math inline">\(0.6\)</span></td>
+    <td>0.36</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>4.0</td>
+    <td><span class="math inline">\(1.0\)</span></td>
+    <td>1.00</td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td>4.6</td>
+    <td><span class="math inline">\(-0.6\)</span></td>
+    <td>0.36</td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td>5.2</td>
+    <td><span class="math inline">\(-0.2\)</span></td>
+    <td>0.04</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><span class="math display">\[\text{RSS} = 0.64 + 0.36 + 1.00 +
+    0.36 + 0.04 = 2.40\]</span></p>
+    <p><strong>Step 5 - estimate <span
+    class="math inline">\(\sigma^2\)</span> and compute SE<span
+    class="math inline">\((\hat\beta_1)\)</span>.</strong></p>
+    <p><span class="math display">\[\hat\sigma^2 =
+    \frac{\text{RSS}}{n-2} = \frac{2.40}{3} = 0.80\]</span></p>
+    <p><span class="math display">\[\text{SE}(\hat\beta_1) =
+    \sqrt{\frac{\hat\sigma^2}{S_{xx}}} = \sqrt{\frac{0.80}{10}} =
+    \sqrt{0.08} \approx 0.283\]</span></p>
+    <p><strong>Step 6 - t-test for the slope.</strong></p>
+    <p><span class="math display">\[t =
+    \frac{\hat\beta_1}{\text{SE}(\hat\beta_1)} = \frac{0.6}{0.283}
+    \approx 2.12\]</span></p>
+    <p>This follows a <span class="math inline">\(t_{n-2} = t_3\)</span>
+    distribution under <span class="math inline">\(H_0: \beta_1 =
+    0\)</span>. The two-sided p-value is approximately <span
+    class="math inline">\(0.125\)</span>, so with only five points we do
+    not reject <span class="math inline">\(H_0\)</span> at the 5% level
+    — the estimate is positive but the sample is too small to be
+    conclusive.</p>
+    <p><strong>Step 7 - compute <span
+    class="math inline">\(R^2\)</span>.</strong></p>
+    <p><span class="math display">\[\text{TSS} = \sum_{i=1}^{5}(y_i -
+    \bar y)^2 = 4 + 0 + 1 + 0 + 1 = 6\]</span></p>
+    <p><span class="math display">\[R^2 = 1 -
+    \frac{\text{RSS}}{\text{TSS}} = 1 - \frac{2.40}{6} =
+    0.60\]</span></p>
+    <p>60% of the variance in <span class="math inline">\(y\)</span> is
+    explained by the linear relationship with <span
+    class="math inline">\(x\)</span>.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>OLS has two complementary geometric interpretations.</p>
+    <p><strong>In data space</strong> (left panel below), the fitted
+    line sits as close as possible to all the points simultaneously.
+    “Close” means minimizing the total squared vertical distance from
+    each point to the line. The dashed orange segments are those
+    distances (<span class="math inline">\(e_i\)</span>). Squaring the
+    distances penalizes large errors more than small ones and ensures
+    they do not cancel across observations.</p>
+    <p><strong>In parameter space</strong> (right panel), treating <span
+    class="math inline">\(\beta_0\)</span> and <span
+    class="math inline">\(\beta_1\)</span> as free variables, the RSS
+    defines a bowl-shaped surface over the <span
+    class="math inline">\((\beta_0, \beta_1)\)</span> plane. Because RSS
+    is a convex quadratic in the parameters, the bowl has exactly one
+    bottom.</p>
+    <p><img src="../../../images/ordinary_linear_regression.png" /></p>
+    <p>Although simple linear regression is easy and interpretable, the
+    reality is that you typically have more than one predictor and these
+    predictors can be (and very often are) correlated with each other.
+    To handle these problems requires something slightly more
+    sophisticated: <span class="wikilink"
+    title="See: Multiple Linear Regression">Multiple Linear
+    Regression</span>.</p>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“The regression line passes through all the data
+    points.”</strong> It passes through <span
+    class="math inline">\((\bar x, \bar y)\)</span> and minimizes
+    squared distances to the points, but only in the degenerate case of
+    a perfect linear relationship does it pass through every point.</p>
+    <p><strong>“A high <span class="math inline">\(R^2\)</span> means
+    the model is correct.”</strong> <span
+    class="math inline">\(R^2\)</span> measures the proportion of
+    variance explained by the linear fit. A nonlinear relationship can
+    yield a high <span class="math inline">\(R^2\)</span> if the
+    curvature is mild, while a true linear relationship in noisy data
+    can yield a low <span class="math inline">\(R^2\)</span>. Always
+    inspect residual plots.</p>
+    <p><strong>“The fitted values predict what an individual observation
+    will be.”</strong> The model estimates <span
+    class="math inline">\(\mathbb{E}[Y \mid X = x]\)</span>, the
+    conditional mean. Individual observations scatter around that mean
+    by <span class="math inline">\(\pm \sigma\)</span>. Predicting an
+    individual requires a prediction interval, which is always wider
+    than a confidence interval for the mean.</p>
+    <p><strong>“Regression shows causation.”</strong> OLS quantifies
+    association. Causal interpretation requires additional assumptions
+    (randomization, or a valid identification strategy in observational
+    data) that OLS alone does not provide.</p>
+    <p><strong>“You can freely extrapolate beyond the data
+    range.”</strong> The line is estimated only where data exist. Beyond
+    that range there is no guarantee the linear relationship continues,
+    and predictions can become nonsensical.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><span class="wikilink"
+    title="See: Gauss-Markov Theorem">Gauss-Markov Theorem</span>, <span
+    class="wikilink" title="See: bias-variance tradeoff">bias-variance
+    tradeoff</span>, <span class="wikilink"
+    title="See: Generalized Linear Models">Generalized Linear
+    Models</span>, <span class="wikilink"
+    title="See: R-squared">R-squared</span>, <span class="wikilink"
+    title="See: Pearson correlation">Pearson correlation</span></p>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <p>James, G., Witten, D., Hastie, T., &amp; Tibshirani, R. (2021).
+    <em>An Introduction to Statistical Learning</em> (2nd ed.).
+    Springer.</p>
+    <p>Freedman, D., Pisani, R., &amp; Purves, R. (2007).
+    <em>Statistics</em> (4th ed.). W. W. Norton.</p>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <span></span>
+    </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>
