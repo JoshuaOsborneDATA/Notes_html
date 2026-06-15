@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>P-Value — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
+  <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>P-Value</h1>
+  <p class="notes-hero-sub">The probability of observing data at least
+this extreme under the null hypothesis.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>A p-value is the probability of obtaining a test statistic at
+    least as extreme as the one observed, assuming the null hypothesis
+    is true.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>Hypothesis testing requires a way to quantify how surprising the
+    observed data is under a default assumption. A raw <span
+    class="wikilink" title="See: test-statistic">test-statistic</span>
+    (e.g., z = 2.1) is hard to interpret without knowing its null
+    distribution. The p-value converts the test statistic into a
+    probability on [0, 1], giving a standardized measure of how
+    compatible the data is with <span
+    class="math inline">\(H_0\)</span>. A small p-value means the data
+    would rarely arise if <span class="math inline">\(H_0\)</span> were
+    true; a large p-value means the data is unremarkable under <span
+    class="math inline">\(H_0\)</span>.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>The p-value is the probability, computed under the null
+    distribution, of observing a test statistic at least as extreme as
+    the one actually obtained. For a one-tailed test, “at least as
+    extreme” means in the direction of the alternative; for a two-tailed
+    test, it means in either direction. We reject the null hypothesis
+    when the p-value falls below the pre-specified significance level
+    alpha.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(H_0\)</span></td>
+    <td>statement</td>
+    <td>Null hypothesis</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(H_1\)</span></td>
+    <td>statement</td>
+    <td>Alternative hypothesis</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(T\)</span></td>
+    <td>random variable</td>
+    <td>Test statistic under <span
+    class="math inline">\(H_0\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(t_{\text{obs}}\)</span></td>
+    <td>scalar</td>
+    <td>Observed value of the test statistic</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(p\)</span></td>
+    <td>scalar <span class="math inline">\(\in [0,1]\)</span></td>
+    <td>p-value</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\alpha\)</span></td>
+    <td>scalar <span class="math inline">\(\in [0,1]\)</span></td>
+    <td>Pre-specified significance level</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(F_0\)</span></td>
+    <td>CDF</td>
+    <td>Null distribution of <span class="math inline">\(T\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\Phi\)</span></td>
+    <td>CDF</td>
+    <td>Standard normal CDF</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(F_{n-1}\)</span></td>
+    <td>CDF</td>
+    <td>t-distribution CDF with <span class="math inline">\(n-1\)</span>
+    degrees of freedom</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>Sample size</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\bar{x}\)</span></td>
+    <td>scalar</td>
+    <td>Sample mean</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mu_0\)</span></td>
+    <td>scalar</td>
+    <td>Hypothesized population mean under <span
+    class="math inline">\(H_0\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\sigma\)</span></td>
+    <td>scalar</td>
+    <td>Population standard deviation (known)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(s\)</span></td>
+    <td>scalar</td>
+    <td>Sample standard deviation (estimated from data)</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p><strong>Step 1.</strong> Compute the test statistic from the
+    data.</p>
+    <p>One-sample z-test (known <span
+    class="math inline">\(\sigma\)</span>):</p>
+    <p><span class="math display">\[z = \frac{\bar{x} - \mu_0}{\sigma /
+    \sqrt{n}}\]</span></p>
+    <p>One-sample t-test (unknown <span
+    class="math inline">\(\sigma\)</span>, use <span
+    class="math inline">\(s\)</span>):</p>
+    <p><span class="math display">\[t = \frac{\bar{x} - \mu_0}{s /
+    \sqrt{n}}\]</span></p>
+    <p><strong>Step 2.</strong> Evaluate the tail probability under the
+    null distribution.</p>
+    <p>One-tailed p-value (right tail):</p>
+    <p><span class="math display">\[p = 1 - \Phi(z)\]</span></p>
+    <p>One-tailed p-value (left tail):</p>
+    <p><span class="math display">\[p = \Phi(z)\]</span></p>
+    <p>Two-tailed p-value (z-test):</p>
+    <p><span class="math display">\[p = 2\bigl(1 -
+    \Phi(|z|)\bigr)\]</span></p>
+    <p>Two-tailed p-value (t-test, <span class="math inline">\(n -
+    1\)</span> degrees of freedom):</p>
+    <p><span class="math display">\[p = 2\bigl(1 -
+    F_{n-1}(|t|)\bigr)\]</span></p>
+    <p><strong>Step 3.</strong> Compare to <span
+    class="math inline">\(\alpha\)</span>. Reject <span
+    class="math inline">\(H_0\)</span> if <span class="math inline">\(p
+    &lt; \alpha\)</span>. The standard is <span
+    class="math inline">\(\alpha=0.05\)</span> or <span
+    class="math inline">\(\alpha=0.01\)</span></p>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p>A coin is flipped 100 times and 60 heads are observed. Test
+    whether the coin is fair at <span class="math inline">\(\alpha =
+    0.05\)</span>.</p>
+    <p>Setup:</p>
+    <ul>
+    <li><p><span class="math inline">\(H_0\)</span>: <span
+    class="math inline">\(p = 0.5\)</span>, <span
+    class="math inline">\(H_1\)</span>: <span class="math inline">\(p
+    \neq 0.5\)</span> (two-tailed)</p></li>
+    <li><p>Under <span class="math inline">\(H_0\)</span>, the number of
+    heads <span class="math inline">\(X \sim \text{Binomial}(100,
+    0.5)\)</span>, so <span class="math inline">\(\mu = np =
+    50\)</span></p></li>
+    <li><p>The standard deviation uses the Binomial variance formula
+    <span class="math inline">\(\text{Var}(X) = np(1-p)\)</span>, giving
+    <span class="math inline">\(\sigma = \sqrt{100 \cdot 0.5 \cdot 0.5}
+    = 5\)</span></p></li>
+    </ul>
+    <p>Compute: <span class="math display">\[z = \frac{60 - 50}{5} =
+    2.0\]</span></p>
+    <p><span class="math display">\[p = 2(1 - \Phi(2.0)) = 2(0.0228) =
+    0.0456\]</span></p>
+    <p>Decision: <span class="math inline">\(0.0456 &lt; 0.05\)</span>,
+    so reject <span class="math inline">\(H_0\)</span>.</p>
+    <p>Interpretation: if the coin were fair, we would observe 60 or
+    more heads (or 40 or fewer) only about 4.6% of the time. That is
+    surprising enough to reject fairness at the 5% level.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>Picture the null distribution as a bell curve centered at zero.
+    The test statistic marks a point on the x-axis. The p-value is the
+    shaded area in the tail(s) beyond that point.</p>
+    <p><img src="../images/p_value_figures.png" /></p>
+    <p>A large test statistic pushes the point far into the tail, making
+    the shaded area small: a small p-value means that the data was
+    surprising given <span class="math inline">\(H_0\)</span>. A test
+    statistic that sits near zero means we get a large p-value: the data
+    was completely expected given <span
+    class="math inline">\(H_0\)</span></p>
+    <p>The significance level, <span
+    class="math inline">\(\alpha\)</span>, draws a vertical cutoff (the
+    green-blue lines) on the distribution. If the observed test
+    statistic falls beyond the cutoff (i.e., <span
+    class="math inline">\(p &lt; \alpha\)</span>), we reject the null
+    hypothesis. Critically, <span class="math inline">\(\alpha\)</span>
+    must be chosen before seeing the data. Adjusting it after
+    observation is <span class="wikilink"
+    title="See: p-hacking">p-hacking</span>.</p>
+    <p>The p-value is not fixed by the data alone. It also depends on
+    the choice of null distribution, the directionality of the test (one
+    vs. two-tailed), and the test statistic used.</p>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“The p-value is the probability that <span
+    class="math inline">\(H_0\)</span> is true.”</strong> The p-value is
+    <span class="math inline">\(P(\text{data this extreme} \mid
+    H_0)\)</span>, which is read as: the probability of getting data
+    this extreme given <span class="math inline">\(H_0\)</span>. to get
+    the probability that the null is true would be, <span
+    class="math inline">\(P(H_0 \mid \text{data})\)</span>, and would
+    require Bayes’ theorem and a prior on <span
+    class="math inline">\(H_0\)</span>. See
+    <a href="../probability-theory/bayesian-statistics/bayes-rule.html">Bayes
+    Rule</a>.</p>
+    <p><strong>“p &lt; 0.05 means the result is practically
+    meaningful.”</strong> With a large enough sample, even a negligible
+    effect produces <span class="math inline">\(p &lt; 0.05\)</span>.
+    Always pair the p-value with an effect size. p-value does not tell
+    you how meaningful it is, just that you can safely reject the null.
+    See <span class="wikilink"
+    title="See: Effect size and Cohen&#39;s d">Effect size and Cohen’s
+    d</span>.</p>
+    <p><strong>“p &gt; 0.05 means <span
+    class="math inline">\(H_0\)</span> is true.”</strong> Failing to
+    reject <span class="math inline">\(H_0\)</span> is not evidence for
+    <span class="math inline">\(H_0\)</span>. A study with low
+    statistical power can fail to detect a real effect. Absence of
+    evidence is not evidence of absence. See <span class="wikilink"
+    title="See: Power">Power</span>.</p>
+    <p><strong>“A lower p-value means a larger effect.”</strong> The
+    p-value depends on both effect size and sample size. A trivially
+    small effect in a study with <span class="math inline">\(n =
+    1{,}000{,}000\)</span> can yield <span class="math inline">\(p &lt;
+    0.0001\)</span>.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><a href="../hypothesis-testing/what-is-hypothesis-testing.html">What
+    is Hypothesis Testing</a>,
+    <a href="../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>, <span class="wikilink"
+    title="See: t-test">t-test</span>, <span class="wikilink"
+    title="See: Effect size and Cohen&#39;s d">Effect size and Cohen’s
+    d</span>, <span class="wikilink" title="See: alpha peeking">alpha
+    peeking</span>, <span class="wikilink"
+    title="See: Multiple testing">Multiple testing</span>,
+    <a href="../probability-theory/bayesian-statistics/bayes-rule.html">Bayes
+    Rule</a></p>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <ul>
+    <li>Wasserstein, R. L., &amp; Lazar, N. A. (2016). The ASA statement
+    on p-values. <em>The American Statistician</em>, 70(2),
+    129–133.</li>
+    <li>Greenland, S., et al. (2016). Statistical tests, P values,
+    confidence intervals, and power. <em>European Journal of
+    Epidemiology</em>, 31, 337–350.</li>
+    </ul>
+    <p><strong>investopedia:</strong>
+    https://www.investopedia.com/terms/p/p-value.asp</p>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <a href="../hypothesis-testing/what-is-hypothesis-testing.html" class="note-nav-link note-nav-prev">
+    <span>
+      <span class="note-nav-label">&#8592; Previous</span>
+      <span class="note-nav-title">What is Hypothesis Testing?</span>
+    </span>
+  </a>
+      <a href="../hypothesis-testing/confidence-intervals.html" class="note-nav-link note-nav-next">
+    <span>
+      <span class="note-nav-label">Next &#8594;</span>
+      <span class="note-nav-title">Confidence Intervals</span>
+    </span>
+  </a>
+  </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>$title$ — Statistics Notes | Joshua Osborne</title>
+  <title>Bias-Variance
+Tradeoff — Statistics Notes | Joshua Osborne</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
   <script>
     (function(){
@@ -13,14 +14,14 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="$root$style.css" />
+  <link rel="stylesheet" href="../../style.css" />
   <script>
     MathJax = {
       tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-  $if(highlighting-css)$<style>$highlighting-css$</style>$endif$
+  
   <style>
     /* Code blocks */
     .note-body pre {
@@ -273,9 +274,9 @@
 <body>
 
 <nav>
-  <a class="logo" href="$root$index.html">Joshua Osborne</a>
+  <a class="logo" href="../../index.html">Joshua Osborne</a>
   <div class="nav-actions">
-    <a class="nav-back" href="$notesroot$index.html">&#8592; Notes</a>
+    <a class="nav-back" href="../index.html">&#8592; Notes</a>
     <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
       <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -285,44 +286,240 @@
 
 <div class="notes-hero">
   <p class="section-label">Statistics Notes</p>
-  <h1>$title$</h1>
-  <p class="notes-hero-sub">$if(description)$$description$$else$Intuition, full derivations, and worked examples.$endif$</p>
-  $if(author)$<p class="notes-hero-author">by $author$</p>$endif$
+  <h1>Bias-Variance Tradeoff</h1>
+  <p class="notes-hero-sub">The full MSE decomposition into bias
+squared, variance, and irreducible error.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
 </div>
 
 <div class="note-layout">
   <div class="note-toc">
     <p class="note-toc-label">Contents</p>
-    $table-of-contents$
+    <ul>
+    <li><a href="#reducible-vs-irreducible-error"
+    id="toc-reducible-vs-irreducible-error">Reducible vs Irreducible
+    Error</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#bias" id="toc-bias">Bias</a></li>
+    <li><a href="#variance" id="toc-variance">Variance</a></li>
+    <li><a href="#the-tradeoff" id="toc-the-tradeoff">The
+    Tradeoff</a></li>
+    </ul>
   </div>
   <div class="note-body">
-    $body$
+    <p>recall from
+    <a href="../machine-learning/what-is-machine-learning.html">What is
+    machine learning</a> that no model we fit will ever produce a
+    perfect prediction. The general form of our prediction is <span
+    class="math inline">\(Y = f(X) + \epsilon\)</span>, where <span
+    class="math inline">\(\epsilon\)</span> is the error. It turns out
+    there are two types of error: <strong>reducible</strong> and
+    <strong>irreducible</strong>.</p>
+    <section id="reducible-vs-irreducible-error" class="level2">
+    <h2>Reducible vs Irreducible Error</h2>
+    <p><strong>Irreducible error</strong> is the noise that exists no
+    matter how good your model is. It comes from randomness or
+    unmeasured variables that are fundamentally unknowable: things like
+    measurement error, or factors that influence <span
+    class="math inline">\(Y\)</span> that we simply did not (or cannot)
+    collect. No matter how well you fit <span
+    class="math inline">\(f\)</span>, you can never get below this
+    floor.</p>
+    <p><strong>Reducible error</strong> is the part we <em>can</em>
+    improve by building a better model. It has two components: bias and
+    variance; understanding their tradeoff is one of the most important
+    ideas in machine learning.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 27%" />
+    <col style="width: 9%" />
+    <col style="width: 63%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(Y\)</span></td>
+    <td>scalar</td>
+    <td>true value of the response variable</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{f}(X)\)</span> or <span
+    class="math inline">\(\hat y\)</span></td>
+    <td>function</td>
+    <td>our model’s prediction</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{Bias}\)</span></td>
+    <td>scalar</td>
+    <td>how far the average prediction is from the truth</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{Var}\)</span></td>
+    <td>scalar</td>
+    <td>how much predictions vary across different training sets</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\epsilon\)</span></td>
+    <td>scalar</td>
+    <td>irreducible error (noise floor)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\sigma^2_\epsilon\)</span></td>
+    <td>scalar</td>
+    <td>variance of the irreducible error</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p>below is the derivation for finding the total expected prediction
+    error at a point <span class="math inline">\(x\)</span> starting
+    from the mean squared error. If you are unfamiliar with <span
+    class="math inline">\(\mathbb{E}[X]\)</span> please refer to the
+    <span class="wikilink" title="See: Expectation">Expectation</span>
+    notes. Before we begin: a key part of this derivation relates to
+    <span class="math inline">\(\epsilon\)</span>. That is, <span
+    class="math inline">\(\epsilon\)</span> represents the aggregate of
+    many small, independent unmodelled influences, and by the <span
+    class="wikilink" title="See: central limit theorem">central limit
+    theorem</span> that sum converges to a normal distribution such that
+    <span class="math inline">\(\mathbb{E}[\epsilon]=0\)</span></p>
+    <p><strong>Step 1: start with <span class="wikilink"
+    title="See: Mean Squared Error">MSE</span> and substitute</strong>
+    <span class="math inline">\(Y = f(x) + \epsilon\)</span></p>
+    <p><span class="math display">\[\text{MSE} = \mathbb{E}\left[(Y -
+    \hat{f}(x))^2\right] = \mathbb{E}\left[(f(x) + \epsilon -
+    \hat{f}(x))^2\right]\]</span></p>
+    <p><strong>Step 2: expand the square</strong> using <span
+    class="math inline">\((a + b)^2 = a^2 + 2ab + b^2\)</span>, where
+    <span class="math inline">\(a = f(x) - \hat{f}(x)\)</span> and <span
+    class="math inline">\(b = \epsilon\)</span></p>
+    <p><span class="math display">\[= \mathbb{E}\left[(f(x) -
+    \hat{f}(x))^2\right] + 2\mathbb{E}\left[(f(x) -
+    \hat{f}(x))\epsilon\right] +
+    \mathbb{E}\left[\epsilon^2\right]\]</span></p>
+    <p><strong>Step 3: the middle term vanishes</strong> because <span
+    class="math inline">\(\epsilon\)</span> is independent of <span
+    class="math inline">\(\hat{f}(x)\)</span> and has mean zero, so
+    <span class="math inline">\(\mathbb{E}[\epsilon] = 0\)</span> kills
+    it. Also, since <span class="math inline">\(\mathbb{E}[\epsilon] =
+    0\)</span>, we have <span
+    class="math inline">\(\mathbb{E}[\epsilon^2] =
+    \text{Var}(\epsilon)\)</span>. This follows from the variance
+    shortcut <span class="math inline">\(\text{Var}(X) = \mathbb{E}[X^2]
+    - (\mathbb{E}[X])^2\)</span>: substituting <span
+    class="math inline">\(\mathbb{E}[\epsilon] = 0\)</span>, we are left
+    with <span class="math inline">\(\mathbb{E}[\epsilon^2] =
+    \text{Var}(\epsilon)\)</span>. The irreducible error is now
+    isolated:</p>
+    <p><span class="math display">\[= \mathbb{E}\left[(f(x) -
+    \hat{f}(x))^2\right] + \text{Var}(\epsilon)\]</span></p>
+    <p><strong>Step 4: add and subtract</strong> <span
+    class="math inline">\(\mathbb{E}[\hat{f}(x)]\)</span> inside the
+    remaining term (the “add zero” trick):</p>
+    <p><span class="math display">\[f(x) - \hat{f}(x) =
+    \underbrace{\left(f(x) - \mathbb{E}[\hat{f}(x)]\right)}_{A \
+    (\text{bias: a fixed constant})} +
+    \underbrace{\left(\mathbb{E}[\hat{f}(x)] - \hat{f}(x)\right)}_{B \
+    (\text{deviation from mean: random})}\]</span></p>
+    <p><strong>Step 5: expand</strong> <span
+    class="math inline">\(\mathbb{E}[(A+B)^2]\)</span>:</p>
+    <p><span class="math display">\[\mathbb{E}\left[(A+B)^2\right] =
+    \mathbb{E}[A^2] + 2\mathbb{E}[AB] + \mathbb{E}[B^2]\]</span></p>
+    <p>taking each term separately:</p>
+    <p><span class="math inline">\(\mathbb{E}[A^2]\)</span> — <span
+    class="math inline">\(A\)</span> is a constant so expectation does
+    nothing: <span class="math display">\[\mathbb{E}[A^2] = A^2 =
+    \left(f(x) - \mathbb{E}[\hat{f}(x)]\right)^2\]</span></p>
+    <p><span class="math inline">\(\mathbb{E}[AB]\)</span> — <span
+    class="math inline">\(A\)</span> is a constant so pull it out, then
+    <span class="math inline">\(\mathbb{E}[B] = 0\)</span> kills it:
+    <span class="math display">\[\mathbb{E}[AB] = A \cdot \mathbb{E}[B]
+    = A \cdot \mathbb{E}\left[\mathbb{E}[\hat{f}(x)] - \hat{f}(x)\right]
+    = A \cdot \left(\mathbb{E}[\hat{f}(x)] -
+    \mathbb{E}[\hat{f}(x)]\right) = 0\]</span></p>
+    <p><span class="math inline">\(\mathbb{E}[B^2]\)</span> — this is
+    exactly the definition of variance: <span
+    class="math display">\[\mathbb{E}[B^2] =
+    \mathbb{E}\left[\left(\mathbb{E}[\hat{f}(x)] -
+    \hat{f}(x)\right)^2\right] = \text{Var}(\hat{f}(x))\]</span></p>
+    <p>putting the three terms back together:</p>
+    <p><span class="math display">\[\mathbb{E}\left[(f(x) -
+    \hat{f}(x))^2\right] = \underbrace{\left(f(x) -
+    \mathbb{E}[\hat{f}(x)]\right)^2}_{\text{Bias}^2} +
+    \underbrace{0}_{\text{cross term}} +
+    \underbrace{\text{Var}(\hat{f}(x))}_{\text{Variance}}\]</span></p>
+    <p><strong>Step 6: Put it all together:</strong></p>
+    <p><span class="math display">\[\text{Total Error} =
+    \underbrace{\left(f(x) -
+    \mathbb{E}[\hat{f}(x)]\right)^2}_{\text{Bias}^2} +
+    \underbrace{\mathbb{E}\left[\left(\hat{f}(x) -
+    \mathbb{E}[\hat{f}(x)]\right)^2\right]}_{\text{Variance}} +
+    \underbrace{\text{Var}(\epsilon)}_{\text{Irreducible}}
+    \tag{1}\]</span></p>
+    <p>where the first two terms make up the <strong>reducible
+    error</strong> and the last term is the <strong>irreducible
+    error</strong>.</p>
+    </section>
+    <section id="bias" class="level2">
+    <h2>Bias</h2>
+    <p>Bias is the error that comes from wrong assumptions in your
+    model. A highly biased model is too simple to capture the true
+    relationship in the data: it consistently misses in the same
+    direction. This is called <strong>underfitting</strong>.</p>
+    <p>Think of it this way: if you tried to fit a straight line to data
+    that follows a curve, your predictions would be systematically off
+    regardless of how much data you had. That systematic gap is
+    bias.</p>
+    </section>
+    <section id="variance" class="level2">
+    <h2>Variance</h2>
+    <p>Variance is the error that comes from your model being too
+    sensitive to the training data. A high-variance model learns the
+    training data so well that it picks up on random noise, and when it
+    sees new data it performs poorly. This is called
+    <strong>overfitting</strong>.</p>
+    <p>A useful way to think about it: if you trained your model on
+    several different samples of the data and got very different
+    predictions each time, your model has high variance.</p>
+    </section>
+    <section id="the-tradeoff" class="level2">
+    <h2>The Tradeoff</h2>
+    <p>Bias and variance pull in opposite directions:</p>
+    <ul>
+    <li><p>A <strong>simpler model</strong> (e.g. a straight line) tends
+    to have <strong>high bias, low variance</strong>: consistently
+    wrong, but stable</p></li>
+    <li><p>A <strong>more complex model</strong> (e.g. a high-degree
+    polynomial) tends to have <strong>low bias, high variance</strong>:
+    flexible enough to fit the truth, but sensitive to noise</p></li>
+    </ul>
+    <p>The goal is to find the sweet spot that minimizes total reducible
+    error. Crucially, no matter where you land on that tradeoff, you can
+    never do better than the irreducible error <span
+    class="math inline">\(\sigma^2_\epsilon\)</span>.</p>
+    </section>
   </div>
 </div>
 
 <div class="note-nav">
-  $if(prev)$
-  <a href="$notesroot$$prev$" class="note-nav-link note-nav-prev">
-    <span>
-      <span class="note-nav-label">&#8592; Previous</span>
-      <span class="note-nav-title">$prevtitle$</span>
-    </span>
-  </a>
-  $else$
-  <span></span>
-  $endif$
-  $if(next)$
-  <a href="$notesroot$$next$" class="note-nav-link note-nav-next">
-    <span>
-      <span class="note-nav-label">Next &#8594;</span>
-      <span class="note-nav-title">$nexttitle$</span>
-    </span>
-  </a>
-  $endif$
-</div>
+    <span></span>
+    </div>
 
 <footer>
-  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="$root$index.html">Portfolio</a></p>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../index.html">Portfolio</a></p>
 </footer>
 
 <button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>

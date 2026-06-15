@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bayes' Rule — Statistics Notes | Joshua Osborne</title>
+  <title>Credible Interval — Statistics Notes | Joshua Osborne</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
   <script>
     (function(){
@@ -285,10 +285,9 @@
 
 <div class="notes-hero">
   <p class="section-label">Statistics Notes</p>
-  <h1>Bayes' Rule</h1>
-  <p class="notes-hero-sub">How prior beliefs update on new evidence.
-The foundation of Bayesian inference, Thompson Sampling, and conjugate
-priors.</p>
+  <h1>Credible Interval</h1>
+  <p class="notes-hero-sub">The Bayesian counterpart to the confidence
+interval: a direct probability of a parameter being within a range.</p>
   <p class="notes-hero-author">by Joshua Osborne</p>
 </div>
 
@@ -296,333 +295,278 @@ priors.</p>
   <div class="note-toc">
     <p class="note-toc-label">Contents</p>
     <ul>
-    <li><a href="#set-notation" id="toc-set-notation">Set
-    Notation</a></li>
-    <li><a href="#conditional-probability"
-    id="toc-conditional-probability">Conditional Probability</a></li>
-    <li><a href="#intuition" id="toc-intuition">Intuition</a></li>
-    <li><a href="#equation-and-variable-meaning"
-    id="toc-equation-and-variable-meaning">Equation and variable
-    meaning</a></li>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
     <li><a href="#common-misconceptions"
     id="toc-common-misconceptions">Common Misconceptions</a></li>
-    <li><a href="#applications"
-    id="toc-applications">Applications</a></li>
-    <li><a href="#example-thompson-sampling"
-    id="toc-example-thompson-sampling">Example: Thompson
-    Sampling</a></li>
-    <li><a href="#a-simple-derivation-of-bayes-rule"
-    id="toc-a-simple-derivation-of-bayes-rule">A Simple Derivation of
-    Bayes’ Rule</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
     </ul>
   </div>
   <div class="note-body">
-    <section id="set-notation" class="level2">
-    <h2>Set Notation</h2>
-    <p>Before the equations, here is the notation used throughout:</p>
+    <p>A credible interval is a range that contains the true parameter
+    value with a specified posterior probability, given the observed
+    data and a prior belief about the parameter.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>A
+    <a href="../../hypothesis-testing/confidence-intervals.html">confidence
+    interval</a> makes a statement about a repeated-sampling procedure:
+    “95% of intervals constructed this way contain <span
+    class="math inline">\(\theta\)</span>.” Most people, including
+    myself, prefer a direct probability statement: “given the data I
+    observed, what is the probability <span
+    class="math inline">\(\theta\)</span> lies in this range?” A
+    credible interval answers that question.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>A credible interval is a range <span class="math inline">\([a,
+    b]\)</span> that, after updating your beliefs with the observed
+    data, the probability that the true parameter <span
+    class="math inline">\(\theta\)</span> falls inside <span
+    class="math inline">\([a, b]\)</span> equals the chosen credibility
+    level (e.g., 95%).</p>
+    <p>This is a direct probability statement about the parameter: you
+    can literally say “there is a 95% probability <span
+    class="math inline">\(\theta\)</span> is in <span
+    class="math inline">\([a, b]\)</span>.” A
+    <a href="../../hypothesis-testing/confidence-intervals.html">confidence
+    interval</a> cannot make that statement.</p>
+    <p>Two versions of the credible interval exist. The <span
+    class="wikilink" title="See: equal-tailed interval">equal-tailed
+    interval</span> (ETI) cuts off equal probability in each tail, so
+    2.5% is left below <span class="math inline">\(a\)</span> and 2.5%
+    above <span class="math inline">\(b\)</span> for a 95% interval. The
+    <span class="wikilink" title="See: highest density interval">highest
+    density interval</span> (HDI) is the shortest possible interval that
+    still contains 95% of the posterior mass. For symmetric posteriors
+    they are the same; for skewed posteriors the HDI is narrower and
+    preferred.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
     <table>
     <colgroup>
-    <col style="width: 25%" />
-    <col style="width: 25%" />
-    <col style="width: 25%" />
-    <col style="width: 25%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
     </colgroup>
     <thead>
     <tr>
     <th>Symbol</th>
-    <th>Name</th>
-    <th>Meaning</th>
-    <th>Plain English</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-    <td><span class="math inline">\(\Omega\)</span></td>
-    <td>Sample space</td>
-    <td>the set of all possible outcomes</td>
-    <td>“everything that could happen”</td>
-    </tr>
-    <tr>
-    <td><span class="math inline">\(A, B\)</span></td>
-    <td>Events</td>
-    <td>subsets of <span class="math inline">\(\Omega\)</span></td>
-    <td>“a particular outcome or group of outcomes”</td>
-    </tr>
-    <tr>
-    <td><span class="math inline">\(A \cap B\)</span></td>
-    <td>Intersection</td>
-    <td>outcomes in both A and B</td>
-    <td>“A <strong>and</strong> B”</td>
-    </tr>
-    <tr>
-    <td><span class="math inline">\(A \cup B\)</span></td>
-    <td>Union</td>
-    <td>outcomes in A or B or both</td>
-    <td>“A <strong>or</strong> B”</td>
-    </tr>
-    <tr>
-    <td><span class="math inline">\(A^c\)</span></td>
-    <td>Complement</td>
-    <td>outcomes in <span class="math inline">\(\Omega\)</span> but not
-    in A</td>
-    <td>“<strong>not</strong> A”</td>
-    </tr>
-    <tr>
-    <td><span class="math inline">\(P(A)\)</span></td>
-    <td>Probability</td>
-    <td>a number in <span class="math inline">\([0,1]\)</span> measuring
-    how likely A is</td>
-    <td>“the chance of A”</td>
-    </tr>
-    </tbody>
-    </table>
-    <p><strong>Quick example</strong> - rolling a fair die, <span
-    class="math inline">\(\Omega = \{1,2,3,4,5,6\}\)</span>:</p>
-    <ul>
-    <li><span class="math inline">\(A = \{2,4,6\}\)</span> (even), <span
-    class="math inline">\(B = \{4,5,6\}\)</span> (greater than 3)</li>
-    <li><span class="math inline">\(A \cap B = \{4,6\}\)</span>; even
-    <strong>and</strong> greater than 3</li>
-    <li><span class="math inline">\(A \cup B = \{2,4,5,6\}\)</span>;
-    even <strong>or</strong> greater than 3</li>
-    <li><span class="math inline">\(A^c = \{1,3,5\}\)</span>;
-    <strong>not</strong> even</li>
-    </ul>
-    </section>
-    <section id="conditional-probability" class="level2">
-    <h2>Conditional Probability</h2>
-    <p>Conditional probability is the probability of event A occurring
-    <em>given</em> that B has already occurred: <span
-    class="math display">\[P(A \mid B) = \frac{P(A \cap
-    B)}{P(B)}\]</span> Intuitively: we restrict the sample space to only
-    the outcomes where B happened, then ask what fraction of those also
-    include A.</p>
-    </section>
-    <section id="intuition" class="level2">
-    <h2>Intuition</h2>
-    <p>Bayes’ rule describes how to update a belief when new evidence
-    arrives. First you begin with what is called your
-    <strong>prior</strong>. The prior represents your belief in
-    something before seeing any evidence. When modelling a probability
-    (such as a click rate or open rate) with no prior knowledge;
-    Beta(1,1), the uniform distribution, is a common uninformative
-    starting point because it assigns equal plausibility to all values
-    of θ between 0 and 1. You then observe evidence, and Bayes tells you
-    exactly how much to update that belief into a
-    <strong>posterior</strong>.</p>
-    <p>The <strong>likelihood</strong> is what connects the two: it
-    measures how well the evidence is explained by your hypothesis.</p>
-    </section>
-    <section id="equation-and-variable-meaning" class="level2">
-    <h2>Equation and variable meaning</h2>
-    <p><span class="math display">\[P(A \mid B) = \frac{P(B \mid A)
-    \cdot P(A)}{P(B)}\]</span> <span class="math display">\[P(B) = \int
-    P(B \mid A) \cdot P(A) dA\]</span></p>
-    <p>Each term has a name:</p>
-    <table>
-    <colgroup>
-    <col style="width: 33%" />
-    <col style="width: 33%" />
-    <col style="width: 33%" />
-    </colgroup>
-    <thead>
-    <tr>
-    <th>Term</th>
-    <th>Name</th>
+    <th>Type</th>
     <th>Meaning</th>
     </tr>
     </thead>
     <tbody>
     <tr>
-    <td><span class="math inline">\(P(A \mid B)\)</span></td>
-    <td>Posterior</td>
-    <td>probability of A being true given we’ve seen B</td>
+    <td><span class="math inline">\(\theta\)</span></td>
+    <td>random variable</td>
+    <td>Unknown parameter, treated probabilistically</td>
     </tr>
     <tr>
-    <td><span class="math inline">\(P(B \mid A)\)</span></td>
-    <td>Likelihood</td>
-    <td>probability of seeing B if A were true</td>
+    <td><span class="math inline">\(\mathbf{X}\)</span></td>
+    <td>vector</td>
+    <td>Observed data</td>
     </tr>
     <tr>
-    <td><span class="math inline">\(P(A)\)</span></td>
-    <td>Prior</td>
-    <td>our belief in A before seeing any evidence</td>
+    <td><span class="math inline">\(P(\theta \mid
+    \mathbf{X})\)</span></td>
+    <td>distribution</td>
+    <td>Posterior distribution of <span
+    class="math inline">\(\theta\)</span> given the data</td>
     </tr>
     <tr>
-    <td><span class="math inline">\(P(B)\)</span></td>
-    <td>Marginal</td>
-    <td>overall probability of seeing B regardless of A</td>
+    <td><span class="math inline">\(P(\mathbf{X} \mid
+    \theta)\)</span></td>
+    <td>function</td>
+    <td>Likelihood of the data given <span
+    class="math inline">\(\theta\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(P(\theta)\)</span></td>
+    <td>distribution</td>
+    <td>Prior distribution over <span
+    class="math inline">\(\theta\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(Q_p\)</span></td>
+    <td>scalar</td>
+    <td><span class="math inline">\(p\)</span>-th quantile of the
+    posterior</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\alpha\)</span></td>
+    <td>scalar <span class="math inline">\(\in (0,1)\)</span></td>
+    <td>Complement of the credibility level; <span
+    class="math inline">\(1 - \alpha\)</span> is the posterior mass
+    contained</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\([a, b]\)</span></td>
+    <td>interval</td>
+    <td>Credible interval bounds</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\alpha_0, \beta_0\)</span></td>
+    <td>scalars</td>
+    <td>Beta distribution shape parameters (prior)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(k\)</span></td>
+    <td>integer</td>
+    <td>Number of successes observed</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>Total trials observed</td>
     </tr>
     </tbody>
     </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p><strong>Posterior via
+    <a href="../../probability-theory/bayesian-statistics/bayes-rule.html">Bayes’
+    theorem</a>:</strong></p>
+    <p><span class="math display">\[P(\theta \mid \mathbf{X}) \propto
+    P(\mathbf{X} \mid \theta) \cdot P(\theta)\]</span></p>
+    <p><strong>Equal-tailed credible interval (ETI):</strong></p>
+    <p><span class="math display">\[[Q_{\alpha/2},\;
+    Q_{1-\alpha/2}]\]</span></p>
+    <p>where <span class="math inline">\(Q_p\)</span> is the <span
+    class="math inline">\(p\)</span>-th quantile of the posterior.</p>
+    <p><strong>Beta-Binomial conjugate posterior</strong> (Bernoulli
+    likelihood with Beta prior):</p>
+    <p><span class="math display">\[\theta \sim \text{Beta}(\alpha_0,
+    \beta_0) \quad \Rightarrow \quad \theta \mid k, n \sim
+    \text{Beta}(\alpha_0 + k,\; \beta_0 + n - k)\]</span></p>
+    <p><span class="math display">\[ \quad E[\theta \mid k, n] =
+    \frac{\alpha_0 + k}{\alpha_0 + \beta_0 + n}\]</span></p>
+    <p>As <span class="math inline">\(n\)</span> grows, the data term
+    <span class="math inline">\(k/n\)</span> dominates and the prior
+    washes out.</p>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p>A coin is flipped 10 times and 6 heads are observed. Construct a
+    95% credible interval for the bias <span
+    class="math inline">\(\theta\)</span>.</p>
+    <p><strong>Prior:</strong> <span class="math inline">\(\theta \sim
+    \text{Beta}(1, 1)\)</span> (<span class="wikilink"
+    title="See: uniform distribution">uniform</span>).</p>
+    <p><strong>Posterior:</strong> <span class="math inline">\(\theta
+    \mid \mathbf{X} \sim \text{Beta}(1 + 6,\; 1 + 4) = \text{Beta}(7,
+    5)\)</span>.</p>
+    <p><strong>95% equal-tailed interval:</strong> <span
+    class="math inline">\([Q_{0.025},\; Q_{0.975}] \approx [0.28,\;
+    0.85]\)</span>. The Beta distribution has no closed-form quantile
+    formula, so these values are computed numerically (e.g.,
+    <code>scipy.stats.beta.ppf([0.025, 0.975], 7, 5)</code>).</p>
+    <p>Interpretation: given the 10 flips and the uniform prior, there
+    is a 95% probability the coin’s true bias lies between 0.28 and
+    0.85.</p>
+    <p>Compare to a frequentist 95% CI:</p>
+    <p><span class="math display">\[\hat{p} \pm
+    1.96\sqrt{\hat{p}(1-\hat{p})/n} = 0.6 \pm 0.30 \approx [0.30,\;
+    0.90]\]</span></p>
+    <p>The two intervals are similar here because the prior is
+    uninformative and <span class="math inline">\(n\)</span> is
+    moderate. With a more informative prior or smaller <span
+    class="math inline">\(n\)</span>, they diverge.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>The posterior is a full probability distribution over <span
+    class="math inline">\(\theta\)</span>.</p>
+    <p><img src="../../images/credible_interval_figures.png" /></p>
+    <p>With a strong (tight) prior, the credible interval can be narrow
+    even with few data points, because prior knowledge is contributing
+    information. As <span class="math inline">\(n\)</span> grows, the
+    likelihood dominates and the posterior estimates, shrinking the
+    credible interval toward a point estimate regardless of the
+    prior.</p>
+    <p>The <span class="wikilink"
+    title="See: highest density interval">HDI</span> is the shortest
+    interval achieving the target mass and always includes the posterior
+    mode. For skewed posteriors, the <span class="wikilink"
+    title="See: highest density interval">HDI</span> differs from the
+    <span class="wikilink" title="See: equal-tailed interval">ETI</span>
+    and is generally preferred because it is more compact.</p>
     <div class="note-callout">
-    <p><strong>NOTE:</strong> normally, we do not calculate the marginal
-    distribution as it is computationally costly, instead we use the
-    unnormalized posterior, <span class="math inline">\(P(B \mid A)
-    \cdot P(A)\)</span> .</p>
+    <p><strong>NOTE:</strong> The critical difference from a confidence
+    interval is that, once you observe the data and compute the credible
+    interval, the statement “there is a 95% probability <span
+    class="math inline">\(\theta\)</span> is in <span
+    class="math inline">\([a, b]\)</span>” is literally true within the
+    Bayesian framework. A frequentist CI cannot make this statement.</p>
     </div>
     </section>
     <section id="common-misconceptions" class="level2">
     <h2>Common Misconceptions</h2>
-    <p><strong>Confusing P(A|B) with P(B|A)</strong>: these are not the
-    same thing. The probability of testing positive given you have a
-    disease is not the same as the probability of having the disease
-    given a positive test. Mixing these up is known as the
-    <em>prosecutor’s fallacy</em>.</p>
-    <p><strong>Ignoring the prior (base rate neglect)</strong>: even a
-    highly accurate test gives a misleading result if the condition is
-    very rare. A 99% accurate test for a disease affecting 1 in 10,000
-    people still produces mostly false positives on positive tests. The
-    prior <span class="math inline">\(P(A)\)</span> must always be
-    factored in.</p>
-    <p><strong>Thinking the <span class="wikilink"
-    title="See: likelihood ratio">likelihood ratio</span> equals the
-    posterior ratio</strong>: if the likelihood of the data under
-    hypothesis 1 is 5× higher than under hypothesis 2, that does not
-    mean hypothesis 1 is 5× more probable. The ratio of posteriors also
-    depends on the ratio of priors.</p>
-    <p><strong>Thinking the prior always dominates</strong>: with enough
-    data, the likelihood swamps the prior and the posterior is driven
-    almost entirely by the evidence. The prior only dominates when data
-    is scarce.</p>
+    <p><strong>“A credible interval and a confidence interval are the
+    same thing.”</strong> They are numerically close for uninformative
+    priors and large <span class="math inline">\(n\)</span>, but they
+    answer different questions. The CI is a statement about a
+    repeated-sampling procedure. The credible interval is a direct
+    probability statement about <span
+    class="math inline">\(\theta\)</span> given the current data and
+    prior.</p>
+    <p><strong>“Using a prior makes the analysis subjective and
+    unreliable.”</strong> The prior is a formal assumption, the same way
+    the choice of likelihood function is an assumption. A weakly
+    informative or uniform prior produces intervals close to frequentist
+    CIs. Strong priors can be tested via <span class="wikilink"
+    title="See: prior predictive checks">prior predictive
+    checks</span>.</p>
+    <p><strong>“A wider credible interval means a worse
+    analysis.”</strong> Width reflects genuine posterior uncertainty.
+    More data or a more informative prior produces a narrower
+    interval.</p>
     </section>
-    <section id="applications" class="level2">
-    <h2>Applications</h2>
-    <p>Bayes’ rule underpins a large amount of machine learning and
-    statistics:</p>
-    <ul>
-    <li><p><strong><span class="wikilink" title="See: Naive Bayes">Naive
-    Bayes</span> classifiers</strong> (text classification, spam
-    filtering)</p></li>
-    <li><p><strong>Bayesian optimization</strong> (hyperparameter
-    tuning)</p></li>
-    <li><p><strong>Probabilistic graphical models</strong></p></li>
-    <li><p>Any problem that involves reasoning under uncertainty and
-    updating beliefs with new data</p></li>
-    </ul>
-    </section>
-    <section id="example-thompson-sampling" class="level2">
-    <h2>Example: Thompson Sampling</h2>
-    <p>Here I display the use of Bayes rule through a Bayesian
-    <a href="../../hypothesis-testing/ab-testing/multi-arm-bandit/multi-arm-bandit.html">multi-arm
-    bandit</a> known as Thompson sampling.
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><a href="../../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>,
+    <a href="../../probability-theory/bayesian-statistics/bayes-rule.html">Bayes
+    Rule</a>,
+    <a href="../../hypothesis-testing/p-value.html">p-value</a>,
     <a href="../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html">Thompson
-    sampling</a> is one of the clearest demonstrations of Bayes’ rule in
-    action. Each arm in the bandit has an unknown reward probability,
-    <span class="math inline">\(\theta\)</span>. We model our belief
-    about <span class="math inline">\(\theta\)</span> with a
-    <strong>Beta distribution</strong>, which acts as the prior. Each
-    time we pull an arm and observe a reward or failure, we update that
-    distribution. the Bayesian update is given by:</p>
-    <p><span class="math display">\[\underbrace{P(\theta \mid
-    \text{data})}_{\text{posterior}} \propto \underbrace{P(\text{data}
-    \mid \theta)}_{\text{likelihood}} \cdot
-    \underbrace{P(\theta)}_{\text{prior}}\]</span></p>
-    <p>Because the <span class="wikilink"
-    title="See: Beta distribution">Beta distribution</span> is the
-    conjugate prior for the <span class="wikilink"
-    title="See: Bernoulli distribution">Bernoulli distribution</span>
-    likelihood, the update is simply:</p>
-    <p><span class="math display">\[\alpha \leftarrow \alpha + 1 \quad
-    \text{(on success)}, \qquad \beta \leftarrow \beta + 1 \quad
-    \text{(on failure)}\]</span></p>
-    <p>The posterior from one round becomes the prior for the next;
-    Bayes’ rule is applied repeatedly. To make this concrete, let’s go
-    through an example. We are testing email subject line C, which
-    starts with no data: <span
-    class="math inline">\(\text{Beta}(1,1)\)</span>. We send the email
-    and the recipient opens it (reward = 1):</p>
-    <table>
-    <colgroup>
-    <col style="width: 36%" />
-    <col style="width: 19%" />
-    <col style="width: 43%" />
-    </colgroup>
-    <thead>
-    <tr>
-    <th>Term</th>
-    <th>Value</th>
-    <th>Meaning</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-    <td>Prior <span class="math inline">\(P(\theta)\)</span></td>
-    <td><span class="math inline">\(\text{Beta}(1, 1)\)</span></td>
-    <td>flat; we know nothing about C’s open rate yet</td>
-    </tr>
-    <tr>
-    <td>Likelihood <span
-    class="math inline">\(P(\text{data}\mid\theta)\)</span></td>
-    <td>Bernoulli; 1 success</td>
-    <td>one open observed</td>
-    </tr>
-    <tr>
-    <td>Posterior <span class="math inline">\(P(\theta \mid
-    \text{data})\)</span></td>
-    <td><span class="math inline">\(\text{Beta}(2, 1)\)</span></td>
-    <td>belief shifts right; C is probably decent</td>
-    </tr>
-    </tbody>
-    </table>
-    <p>The next round, <span
-    class="math inline">\(\text{Beta}(2,1)\)</span> becomes the new
-    prior. If C gets another open: <span
-    class="math inline">\(\text{Beta}(3,1)\)</span>. A failure: <span
-    class="math inline">\(\text{Beta}(2,2)\)</span>. Each pull is one
-    application of Bayes’ rule. The animation below shows this process
-    running across 200 rounds for three arms simultaneously (true θ =
-    0.3, 0.5, 0.75):</p>
-    <video class="note-video" autoplay loop muted playsinline>
-    <source src="../../images/thompson_sampling_bayes.webm" type="video/webm">
-    </video>
-    <p><strong>What to watch:</strong></p>
-    <ul>
-    <li><p><strong>Top row</strong>: each arm’s Beta distribution
-    narrowing and shifting toward its true θ (red dashed line). The
-    posterior becomes more certain as evidence accumulates (bottom
-    right).</p></li>
-    <li><p><strong>Bottom right</strong>: the prior (blue) vs posterior
-    (green) for the arm just pulled.</p></li>
-    <li><p><strong>Bottom left</strong>: Arm 3 dominates pull counts
-    because its distribution confidently sits highest</p></li>
-    </ul>
+    sampling</a></p>
     </section>
-    <section id="a-simple-derivation-of-bayes-rule" class="level2">
-    <h2>A Simple Derivation of Bayes’ Rule</h2>
-    <p>Here, a simple way of deriving bayes rule through venn diagrams
-    is shown. <span class="math inline">\(P(A \cap B)\)</span> in the
-    plot below is the same physical region regardless of which direction
-    you approach it from. For those unfamiliar, the symbol “<span
-    class="math inline">\(\cap\)</span>” is a union and it means where
-    there is overlap. Another way to say it is “where A
-    <em><strong>AND</strong></em> B”</p>
-    <p><img src="../../images/bayes_venn.png" /></p>
-    <p>From the definition of conditional probability:</p>
-    <p><span class="math display">\[P(B \mid A) = \frac{P(A \cap
-    B)}{P(A)} \implies P(A \cap B) = P(B \mid A)\,P(A)\]</span></p>
-    <p><span class="math display">\[P(A \mid B) = \frac{P(A \cap
-    B)}{P(B)} \implies P(A \cap B) = P(A \mid B)\,P(B)\]</span></p>
-    <p>Since both expressions equal <span class="math inline">\(P(A \cap
-    B)\)</span>, set them equal and rearrange:</p>
-    <p><span class="math display">\[P(B \mid A)\,P(A) = P(A \mid
-    B)\,P(B) \implies P(A \mid B) = \frac{P(B \mid
-    A)\,P(A)}{P(B)}\]</span></p>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <ul>
+    <li>Gelman, A., et al. (2013). <em>Bayesian Data Analysis</em> (3rd
+    ed.). CRC Press. Chapter 2.</li>
+    <li>Kruschke, J. K. (2014). <em>Doing Bayesian Data Analysis</em>
+    (2nd ed.). Academic Press.</li>
+    </ul>
     </section>
   </div>
 </div>
 
 <div class="note-nav">
-    <a href="../../probability-theory/bayesian-statistics/credible-interval.html" class="note-nav-link note-nav-prev">
+    <a href="../../hypothesis-testing/confidence-intervals.html" class="note-nav-link note-nav-prev">
     <span>
       <span class="note-nav-label">&#8592; Previous</span>
-      <span class="note-nav-title">Credible Interval</span>
+      <span class="note-nav-title">Confidence Intervals</span>
     </span>
   </a>
-      <a href="../../hypothesis-testing/ab-testing/multi-arm-bandit/thompson-sampling.html" class="note-nav-link note-nav-next">
+      <a href="../../probability-theory/bayesian-statistics/bayes-rule.html" class="note-nav-link note-nav-next">
     <span>
       <span class="note-nav-label">Next &#8594;</span>
-      <span class="note-nav-title">Thompson Sampling</span>
+      <span class="note-nav-title">Bayes' Rule</span>
     </span>
   </a>
   </div>

@@ -266,6 +266,7 @@ def build(md_path, yaml_path, out):
         [PANDOC,
          '--from', 'markdown', '--to', 'html5',
          '--mathjax', '--toc', '--toc-depth=2', '--section-divs',
+         '--highlight-style', 'breezedark',
          '--template', TEMPLATE,
          ] + cmd_meta + ['-o', out],
         input=pre.stdout, text=True, check=True

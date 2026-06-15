@@ -20,7 +20,44 @@
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
   <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
     /* Nav: minimal standalone */
     nav a.logo { color: var(--white) !important; }
     nav a.logo:hover { opacity: .85; text-decoration: none; }
@@ -620,10 +657,10 @@ strategies.</p>
     different questions. A bandit minimizes regret while deciding; an
     <span class="wikilink" title="See: What is AB-testing">A/B
     test</span> buys a clean, unbiased estimate of the effect size with
-    <span class="wikilink" title="See: confidence intervals">confidence
-    intervals</span> you can defend. Bandit data is adaptively
-    collected, so naive estimates of arm means are biased (arms that got
-    lucky early get pulled more, locking in the luck) and standard test
+    <a href="../../../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a> you can defend. Bandit data is adaptively collected,
+    so naive estimates of arm means are biased (arms that got lucky
+    early get pulled more, locking in the luck) and standard test
     statistics do not apply without correction. Use a bandit when the
     decision is the deliverable (headlines, creatives, short-lived
     content); use an A/B test when the <strong>measurement</strong> is
@@ -665,9 +702,8 @@ strategies.</p>
     <li><p><span class="wikilink" title="See: alpha peeking">alpha
     peeking</span>: what goes wrong when fixed-horizon tests are used
     sequentially without design</p></li>
-    <li><p><span class="wikilink"
-    title="See: confidence intervals">confidence intervals</span>:
-    bandit-collected data biases the usual interval
+    <li><p><a href="../../../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>: bandit-collected data biases the usual interval
     constructions</p></li>
     <li><p><span class="wikilink"
     title="See: Bernoulli distribution">Bernoulli distribution</span>:

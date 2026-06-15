@@ -20,7 +20,44 @@
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
   <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
     /* Nav: minimal standalone */
     nav a.logo { color: var(--white) !important; }
     nav a.logo:hover { opacity: .85; text-decoration: none; }
@@ -500,7 +537,9 @@ uncertainty.</p>
     round <span class="math inline">\(t\)</span> becomes the prior for
     round <span class="math inline">\(t+1\)</span>. The animation below
     shows this process live across 200 rounds:</p>
-    <p><img src="../../../images/thompson_sampling.gif" /></p>
+    <video class="note-video" autoplay loop muted playsinline>
+    <source src="../../../images/thompson_sampling.webm" type="video/webm">
+    </video>
     <p><strong>What to watch:</strong></p>
     <ul>
     <li><p><strong>Round 0</strong>: all three arms start with flat

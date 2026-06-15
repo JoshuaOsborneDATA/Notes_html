@@ -21,7 +21,44 @@
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
   <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
     /* Nav: minimal standalone */
     nav a.logo { color: var(--white) !important; }
     nav a.logo:hover { opacity: .85; text-decoration: none; }
@@ -699,7 +736,9 @@ parameter.</p>
     dashed lines mark the true probabilities. Watch Arm 3’s bonus
     collapse as it earns pulls, while the neglected arms keep wide
     intervals.</p>
-    <p><img src="../../../images/ucb1_convergence.gif" /></p>
+    <video class="note-video" autoplay loop muted playsinline>
+    <source src="../../../images/ucb1_convergence.webm" type="video/webm">
+    </video>
     <p>below shows the full regret comparison:</p>
     <p><img src="../../../images/upper_confidence_bound.png" /></p>
     <p><strong>What to look at:</strong></p>
@@ -771,10 +810,9 @@ parameter.</p>
     deterministic bonus to a point estimate, Thompson samples from a
     full posterior, and both concentrate pulls on plausible
     winners</p></li>
-    <li><p><span class="wikilink"
-    title="See: confidence intervals">confidence intervals</span>: the
-    bonus is literally the half-width of a one-sided confidence
-    interval, re-derived each round</p></li>
+    <li><p><a href="../../../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>: the bonus is literally the half-width of a one-sided
+    confidence interval, re-derived each round</p></li>
     <li><p><span class="wikilink" title="See: What is AB-testing">What
     is AB-testing</span>: bandits trade the clean inference of a
     fixed-horizon test for lower regret during the experiment

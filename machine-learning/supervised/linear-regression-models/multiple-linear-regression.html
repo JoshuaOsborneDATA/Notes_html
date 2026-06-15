@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiple Linear
+Regression — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
+  <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../../../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>Multiple Linear Regression</h1>
+  <p class="notes-hero-sub">Matrix OLS derivation, normal equations,
+t-tests, F-test, adjusted R², and VIF from scratch.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#model-assumptions" id="toc-model-assumptions">Model
+    Assumptions</a></li>
+    <li><a href="#variable-selection"
+    id="toc-variable-selection">Variable Selection</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>Multiple linear regression extends
+    <a href="../../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html">Simple
+    Linear Regression</a> to model a response variable as a linear
+    combination of multiple predictors.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>A single predictor rarely tells the whole story. Exam scores
+    depend on hours studied and hours slept. House prices depend on
+    square footage, number of bedrooms, and neighborhood.
+    <a href="../../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html">Simple
+    Linear Regression</a> handles one predictor at a time, but fitting
+    separate simple regressions ignores the fact that predictors are
+    often correlated. Multiple linear regression holds all other
+    predictors constant while estimating the effect of each one,
+    disentangling those contributions.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>Multiple linear regression models the conditional expectation of
+    <span class="math inline">\(Y\)</span> given predictors <span
+    class="math inline">\(X_1, \ldots, X_p\)</span> as a linear function
+    of those predictors:</p>
+    <p><span class="math display">\[y_i = \beta_0 + \beta_1 x_{i1} +
+    \beta_2 x_{i2} + \cdots + \beta_p x_{ip} + \varepsilon_i, \quad i =
+    1, \ldots, n\]</span></p>
+    <p>In matrix form, stacking all <span
+    class="math inline">\(n\)</span> observations:</p>
+    <p><span class="math display">\[\mathbf{y} =
+    \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}\]</span></p>
+    <p>The first column of <span
+    class="math inline">\(\mathbf{X}\)</span> is all ones, encoding the
+    intercept. OLS estimates <span
+    class="math inline">\(\boldsymbol{\beta}\)</span> by minimizing the
+    residual sum of squares over all <span
+    class="math inline">\(n\)</span> observations simultaneously.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(y_i\)</span></td>
+    <td>scalar</td>
+    <td>observed response for observation <span
+    class="math inline">\(i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(x_{ij}\)</span></td>
+    <td>scalar</td>
+    <td>value of predictor <span class="math inline">\(j\)</span> for
+    observation <span class="math inline">\(i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mathbf{y}\)</span></td>
+    <td><span class="math inline">\(n \times 1\)</span> vector</td>
+    <td>response vector</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mathbf{X}\)</span></td>
+    <td><span class="math inline">\(n \times (p+1)\)</span> matrix</td>
+    <td>design matrix; column 0 is all ones</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\boldsymbol{\beta}\)</span></td>
+    <td><span class="math inline">\((p+1) \times 1\)</span> vector</td>
+    <td>true coefficient vector <span class="math inline">\((\beta_0,
+    \beta_1, \ldots, \beta_p)^T\)</span></td>
+    </tr>
+    <tr>
+    <td><span
+    class="math inline">\(\hat{\boldsymbol{\beta}}\)</span></td>
+    <td><span class="math inline">\((p+1) \times 1\)</span> vector</td>
+    <td>OLS estimate of <span
+    class="math inline">\(\boldsymbol{\beta}\)</span></td>
+    </tr>
+    <tr>
+    <td><span
+    class="math inline">\(\boldsymbol{\varepsilon}\)</span></td>
+    <td><span class="math inline">\(n \times 1\)</span> vector</td>
+    <td>true unobservable errors; <span
+    class="math inline">\(\mathbb{E}[\boldsymbol{\varepsilon}] =
+    \mathbf{0}\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mathbf{e}\)</span></td>
+    <td><span class="math inline">\(n \times 1\)</span> vector</td>
+    <td>observed residuals <span class="math inline">\(\mathbf{y} -
+    \mathbf{X}\hat{\boldsymbol{\beta}}\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>number of observations</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(p\)</span></td>
+    <td>integer</td>
+    <td>number of predictors (not counting the intercept)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\sigma^2\)</span></td>
+    <td>scalar</td>
+    <td>variance of the true errors</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{\sigma}^2\)</span></td>
+    <td>scalar</td>
+    <td>estimated error variance: <span
+    class="math inline">\(\text{RSS}/(n - p - 1)\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{RSS}\)</span></td>
+    <td>scalar</td>
+    <td>residual sum of squares <span class="math inline">\(\|\mathbf{y}
+    - \mathbf{X}\hat{\boldsymbol{\beta}}\|^2\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{TSS}\)</span></td>
+    <td>scalar</td>
+    <td>total sum of squares <span class="math inline">\(\sum(y_i -
+    \bar{y})^2\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(R^2\)</span></td>
+    <td>scalar <span class="math inline">\(\in [0,1]\)</span></td>
+    <td>proportion of variance in <span class="math inline">\(Y\)</span>
+    explained by the model</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(R^2_{\text{adj}}\)</span></td>
+    <td>scalar</td>
+    <td><span class="math inline">\(R^2\)</span> penalised for the
+    number of predictors</td>
+    </tr>
+    <tr>
+    <td><span
+    class="math inline">\(\text{SE}(\hat{\beta}_j)\)</span></td>
+    <td>scalar</td>
+    <td>standard error of the <span class="math inline">\(j\)</span>-th
+    OLS coefficient</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(t_j\)</span></td>
+    <td>scalar</td>
+    <td>t-statistic for testing <span class="math inline">\(H_0: \beta_j
+    = 0\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(F\)</span></td>
+    <td>scalar</td>
+    <td>F-statistic for testing all slopes jointly</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\text{VIF}_j\)</span></td>
+    <td>scalar</td>
+    <td>variance inflation factor for predictor <span
+    class="math inline">\(j\)</span></td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p><strong>Step 1: Write the OLS objective.</strong></p>
+    <p><span class="math display">\[\text{RSS}(\boldsymbol{\beta}) =
+    \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2 = (\mathbf{y} -
+    \mathbf{X}\boldsymbol{\beta})^T(\mathbf{y} -
+    \mathbf{X}\boldsymbol{\beta})\]</span></p>
+    <p>Expand:</p>
+    <p><span class="math display">\[= \mathbf{y}^T\mathbf{y} -
+    2\boldsymbol{\beta}^T\mathbf{X}^T\mathbf{y} +
+    \boldsymbol{\beta}^T\mathbf{X}^T\mathbf{X}\boldsymbol{\beta}\]</span></p>
+    <p><strong>Step 2: Differentiate with respect to <span
+    class="math inline">\(\boldsymbol{\beta}\)</span> and set to
+    zero.</strong></p>
+    <p><span class="math display">\[\frac{\partial \text{RSS}}{\partial
+    \boldsymbol{\beta}} = -2\mathbf{X}^T\mathbf{y} +
+    2\mathbf{X}^T\mathbf{X}\boldsymbol{\beta} = \mathbf{0}\]</span></p>
+    <p>This gives the <strong>normal equations</strong>:</p>
+    <p><span
+    class="math display">\[\mathbf{X}^T\mathbf{X}\,\hat{\boldsymbol{\beta}}
+    = \mathbf{X}^T\mathbf{y}\]</span></p>
+    <p><strong>Step 3: Solve for <span
+    class="math inline">\(\hat{\boldsymbol{\beta}}\)</span></strong>,
+    assuming <span class="math inline">\(\mathbf{X}^T\mathbf{X}\)</span>
+    is invertible (i.e., no perfect multicollinearity):</p>
+    <p><span class="math display">\[\boxed{\hat{\boldsymbol{\beta}} =
+    (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}}\]</span></p>
+    <p><strong>Step 4: Variance of the estimator.</strong></p>
+    <p>Since <span class="math inline">\(\hat{\boldsymbol{\beta}} =
+    (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}\)</span> is
+    linear in <span class="math inline">\(\mathbf{y}\)</span>, its
+    covariance matrix follows by the linear-transformation variance
+    rule:</p>
+    <p><span class="math display">\[\text{Var}(\hat{\boldsymbol{\beta}})
+    = \sigma^2(\mathbf{X}^T\mathbf{X})^{-1}\]</span></p>
+    <p>The standard error of the <span
+    class="math inline">\(j\)</span>-th coefficient is the square root
+    of the <span class="math inline">\(j\)</span>-th diagonal entry:</p>
+    <p><span class="math display">\[\text{SE}(\hat{\beta}_j) =
+    \hat{\sigma}\sqrt{\left[(\mathbf{X}^T\mathbf{X})^{-1}\right]_{jj}},
+    \quad \hat{\sigma}^2 = \frac{\text{RSS}}{n - p - 1}\]</span></p>
+    <p>The denominator <span class="math inline">\(n - p - 1\)</span> is
+    the residual degrees of freedom: <span
+    class="math inline">\(n\)</span> observations minus <span
+    class="math inline">\(p + 1\)</span> estimated parameters.</p>
+    <p><strong>Individual t-tests.</strong></p>
+    <p>To test whether predictor <span class="math inline">\(j\)</span>
+    contributes after controlling for all others:</p>
+    <p><span class="math display">\[t_j =
+    \frac{\hat{\beta}_j}{\text{SE}(\hat{\beta}_j)} \sim t_{n-p-1} \quad
+    \text{under } H_0: \beta_j = 0\]</span></p>
+    <p>The two-sided p-value for coefficient <span
+    class="math inline">\(j\)</span> is:</p>
+    <p><span class="math display">\[p_j = 2\,P\!\left(T_{n-p-1} &gt;
+    |t_j|\right)\]</span></p>
+    <p>A 95% confidence interval for <span
+    class="math inline">\(\beta_j\)</span> uses the same
+    t-distribution:</p>
+    <p><span class="math display">\[\hat{\beta}_j \pm t_{0.025,\, n-p-1}
+    \cdot \text{SE}(\hat{\beta}_j)\]</span></p>
+    <p>This is the same duality as in
+    <a href="../../../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>: <span class="math inline">\(p_j &lt; 0.05\)</span> if
+    and only if the 95% CI for <span
+    class="math inline">\(\beta_j\)</span> excludes zero.</p>
+    <p><strong>Confidence interval for the mean response at a new
+    point.</strong></p>
+    <p>Given a new predictor vector <span
+    class="math inline">\(\mathbf{x}_0 = (1, x_{01}, \ldots,
+    x_{0p})^T\)</span>, the fitted mean is <span
+    class="math inline">\(\hat{y}_0 =
+    \mathbf{x}_0^T\hat{\boldsymbol{\beta}}\)</span>. Its standard error
+    comes from the variance of a linear combination of <span
+    class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>:</p>
+    <p><span class="math display">\[\text{SE}(\hat{y}_0) =
+    \hat{\sigma}\sqrt{\mathbf{x}_0^T(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{x}_0}\]</span></p>
+    <p>So the 95% CI for the conditional mean <span
+    class="math inline">\(\mathbb{E}[Y \mid \mathbf{X} =
+    \mathbf{x}_0]\)</span> is:</p>
+    <p><span class="math display">\[\hat{y}_0 \pm t_{0.025,\, n-p-1}
+    \cdot
+    \hat{\sigma}\sqrt{\mathbf{x}_0^T(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{x}_0}\]</span></p>
+    <p><strong>Prediction interval for a new individual
+    observation.</strong></p>
+    <p>A prediction interval must also account for the irreducible error
+    <span class="math inline">\(\varepsilon_0\)</span> of the new
+    observation itself, so it adds <span
+    class="math inline">\(\hat{\sigma}^2\)</span> inside the square
+    root:</p>
+    <p><span class="math display">\[\hat{y}_0 \pm t_{0.025,\, n-p-1}
+    \cdot \hat{\sigma}\sqrt{1 +
+    \mathbf{x}_0^T(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{x}_0}\]</span></p>
+    <p>The prediction interval is always wider than the CI for the mean.
+    The extra <span class="math inline">\(1\)</span> inside the square
+    root represents the variance of a new draw from the error
+    distribution, which cannot be reduced by collecting more data.</p>
+    <p><strong>F-test for overall model significance.</strong></p>
+    <p>To test whether any predictor is useful at all (<span
+    class="math inline">\(H_0: \beta_1 = \cdots = \beta_p =
+    0\)</span>):</p>
+    <p><span class="math display">\[F = \frac{(\text{TSS} -
+    \text{RSS})/p}{\text{RSS}/(n-p-1)} \sim F_{p,\, n-p-1} \quad
+    \text{under } H_0\]</span></p>
+    <p>The F-statistic requires <span class="math inline">\(n &gt; p +
+    1\)</span> so that the residual degrees of freedom <span
+    class="math inline">\(n - p - 1\)</span> are positive. When <span
+    class="math inline">\(p \geq n\)</span>, <span
+    class="math inline">\(\mathbf{X}^T\mathbf{X}\)</span> is singular
+    and OLS has no unique solution; the F-test is undefined. In that
+    regime use regularization (<span class="wikilink"
+    title="See: Ridge Regression">ridge</span>, <span class="wikilink"
+    title="See: Lasso Regression">lasso</span>) or dimensionality
+    reduction instead.</p>
+    <p><strong>Goodness of fit.</strong></p>
+    <p><span class="math display">\[R^2 = 1 -
+    \frac{\text{RSS}}{\text{TSS}}\]</span></p>
+    <p><span class="math inline">\(R^2\)</span> always increases when a
+    predictor is added, even a useless one. The adjusted version
+    penalizes for <span class="math inline">\(p\)</span>:</p>
+    <p><span class="math display">\[R^2_{\text{adj}} = 1 -
+    \frac{\text{RSS}/(n-p-1)}{\text{TSS}/(n-1)}\]</span></p>
+    <p><strong>Multicollinearity: Variance Inflation
+    Factor.</strong></p>
+    <p>When predictors are correlated, the columns of <span
+    class="math inline">\(\mathbf{X}\)</span> are nearly linearly
+    dependent and <span
+    class="math inline">\((\mathbf{X}^T\mathbf{X})^{-1}\)</span>
+    inflates. The VIF for predictor <span
+    class="math inline">\(j\)</span> quantifies this:</p>
+    <p><span class="math display">\[\text{VIF}_j = \frac{1}{1 -
+    R^2_j}\]</span></p>
+    <p>where <span class="math inline">\(R^2_j\)</span> is the <span
+    class="math inline">\(R^2\)</span> from regressing <span
+    class="math inline">\(x_j\)</span> on all other predictors. A VIF
+    above 10 is a common warning threshold for severe
+    multicollinearity.</p>
+    </section>
+    <section id="model-assumptions" class="level2">
+    <h2>Model Assumptions</h2>
+    <p>The same five Gauss-Markov conditions as in
+    <a href="../../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html">Simple
+    Linear Regression</a> apply in matrix form.</p>
+    <table>
+    <colgroup>
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>#</th>
+    <th>Assumption</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td><strong>Linearity</strong></td>
+    <td><span class="math inline">\(\mathbb{E}[\mathbf{y} \mid
+    \mathbf{X}] = \mathbf{X}\boldsymbol{\beta}\)</span></td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td><strong>Independence</strong></td>
+    <td>rows of <span class="math inline">\(\mathbf{X}\)</span> are
+    independent draws</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td><strong>Homoscedasticity</strong></td>
+    <td><span class="math inline">\(\text{Var}(\varepsilon_i) =
+    \sigma^2\)</span> for all <span
+    class="math inline">\(i\)</span></td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td><strong>Zero mean errors</strong></td>
+    <td><span class="math inline">\(\mathbb{E}[\boldsymbol{\varepsilon}]
+    = \mathbf{0}\)</span></td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td><strong>Normality</strong></td>
+    <td><span class="math inline">\(\boldsymbol{\varepsilon} \sim
+    \mathcal{N}(\mathbf{0}, \sigma^2\mathbf{I})\)</span></td>
+    </tr>
+    </tbody>
+    </table>
+    <p>Assumptions 1 through 4 are the Gauss-Markov conditions; under
+    these alone, <span
+    class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> is the Best
+    Linear Unbiased Estimator. See <span class="wikilink"
+    title="See: Gauss-Markov Theorem">Gauss-Markov Theorem</span>.
+    Assumption 5 additionally makes the t-tests and F-tests exact in
+    finite samples. “Exact” means the test statistic follows its stated
+    distribution (<span class="math inline">\(t_{n-p-1}\)</span> or
+    <span class="math inline">\(F_{p,\,n-p-1}\)</span>) for any <span
+    class="math inline">\(n\)</span>, not just approximately. Without
+    normality the CLT guarantees only that the distributions converge as
+    <span class="math inline">\(n \to \infty\)</span>; with normally
+    distributed errors they hold exactly even for <span
+    class="math inline">\(n = 10\)</span>.</p>
+    </section>
+    <section id="variable-selection" class="level2">
+    <h2>Variable Selection</h2>
+    <p>When many candidate predictors are available, not all belong in
+    the final model. Three greedy procedures are commonly used.</p>
+    <p><strong><span class="wikilink"
+    title="See: Forward selection">Forward selection</span>.</strong>
+    Start with the intercept-only model. At each step, add the single
+    predictor that produces the largest reduction in RSS (or
+    equivalently the most significant F-statistic for the added
+    variable). Stop when no remaining predictor improves the model by a
+    threshold criterion (e.g., <span class="math inline">\(p &lt;
+    0.05\)</span> or an AIC decrease).</p>
+    <p><strong><span class="wikilink"
+    title="See: Backward elimination">Backward
+    elimination</span>.</strong> Start with all <span
+    class="math inline">\(p\)</span> predictors. At each step, remove
+    the predictor with the largest p-value (least significant
+    t-statistic). Stop when all remaining predictors are below the
+    removal threshold. Requires <span class="math inline">\(n &gt; p +
+    1\)</span> to fit the full model initially.</p>
+    <p><strong><span class="wikilink" title="See: Mixed Selection">Mixed
+    (stepwise) selection</span>.</strong> Combine both directions: after
+    each forward addition, check whether any variable already in the
+    model has become non-significant and remove it. This corrects for
+    the fact that adding a new variable can make a previously
+    significant predictor redundant.</p>
+    <p>All three are heuristics and do not guarantee finding the
+    globally optimal subset. They can also inflate Type I error through
+    <span class="wikilink" title="See: Multiple testing">mutiple
+    testing</span>. For rigorous model comparison, prefer information
+    criteria (<span class="wikilink"
+    title="See: Akaike Information Criterion">AIC</span>, <span
+    class="wikilink"
+    title="See: Bayesian Information Criterion">BIC</span>) or
+    cross-validation.</p>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p>Five students are observed. <span
+    class="math inline">\(x_1\)</span> is hours studied, <span
+    class="math inline">\(x_2\)</span> is hours slept the night before,
+    and <span class="math inline">\(y\)</span> is the exam score.</p>
+    <table>
+    <thead>
+    <tr>
+    <th><span class="math inline">\(i\)</span></th>
+    <th><span class="math inline">\(x_{i1}\)</span></th>
+    <th><span class="math inline">\(x_{i2}\)</span></th>
+    <th><span class="math inline">\(y_i\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>1</td>
+    <td>2</td>
+    <td>14</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>2</td>
+    <td>1</td>
+    <td>11</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>3</td>
+    <td>3</td>
+    <td>23</td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td>4</td>
+    <td>2</td>
+    <td>22</td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td>5</td>
+    <td>4</td>
+    <td>35</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Step 1: Build the design matrix and response
+    vector.</strong></p>
+    <p><span class="math display">\[\mathbf{X} = \begin{pmatrix} 1 &amp;
+    1 &amp; 2 \\ 1 &amp; 2 &amp; 1 \\ 1 &amp; 3 &amp; 3 \\ 1 &amp; 4
+    &amp; 2 \\ 1 &amp; 5 &amp; 4 \end{pmatrix}, \qquad \mathbf{y} =
+    \begin{pmatrix} 14 \\ 11 \\ 23 \\ 22 \\ 35
+    \end{pmatrix}\]</span></p>
+    <p><strong>Step 2: Compute the normal equation
+    components.</strong></p>
+    <p><span class="math display">\[\mathbf{X}^T\mathbf{X} =
+    \begin{pmatrix} 5 &amp; 15 &amp; 12 \\ 15 &amp; 55 &amp; 41 \\ 12
+    &amp; 41 &amp; 34 \end{pmatrix}, \qquad \mathbf{X}^T\mathbf{y} =
+    \begin{pmatrix} 105 \\ 368 \\ 292 \end{pmatrix}\]</span></p>
+    <p><strong>Step 3: Solve the normal equations.</strong></p>
+    <p>Applying Gaussian elimination to <span
+    class="math inline">\(\mathbf{X}^T\mathbf{X}\,\hat{\boldsymbol{\beta}}
+    = \mathbf{X}^T\mathbf{y}\)</span> (or equivalently inverting <span
+    class="math inline">\(\mathbf{X}^T\mathbf{X}\)</span>):</p>
+    <p><span class="math display">\[\hat{\boldsymbol{\beta}} =
+    \begin{pmatrix} 0.6 \\ 2.8 \\ 5.0 \end{pmatrix}\]</span></p>
+    <p>Interpretation: holding sleep constant, one additional study hour
+    is associated with a 2.8-point increase in score. Holding study
+    hours constant, one additional hour of sleep is associated with a
+    5.0-point increase.</p>
+    <p><strong>Step 4: Compute residuals and RSS.</strong></p>
+    <table>
+    <thead>
+    <tr>
+    <th><span class="math inline">\(i\)</span></th>
+    <th><span class="math inline">\(\hat{y}_i\)</span></th>
+    <th><span class="math inline">\(e_i = y_i - \hat{y}_i\)</span></th>
+    <th><span class="math inline">\(e_i^2\)</span></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>13.4</td>
+    <td>0.6</td>
+    <td>0.36</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>11.2</td>
+    <td><span class="math inline">\(-0.2\)</span></td>
+    <td>0.04</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>24.0</td>
+    <td><span class="math inline">\(-1.0\)</span></td>
+    <td>1.00</td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td>21.8</td>
+    <td>0.2</td>
+    <td>0.04</td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td>34.6</td>
+    <td>0.4</td>
+    <td>0.16</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><span class="math display">\[\text{RSS} = 1.60\]</span></p>
+    <p><strong>Step 5: Estimate <span
+    class="math inline">\(\sigma^2\)</span> and compute standard
+    errors.</strong></p>
+    <p><span class="math display">\[\hat{\sigma}^2 = \frac{\text{RSS}}{n
+    - p - 1} = \frac{1.60}{2} = 0.80, \qquad \hat{\sigma} =
+    0.894\]</span></p>
+    <p>Using the diagonal of <span
+    class="math inline">\((\mathbf{X}^T\mathbf{X})^{-1}\)</span>:</p>
+    <p><span class="math display">\[\text{SE}(\hat{\beta}_0) = 1.058,
+    \qquad \text{SE}(\hat{\beta}_1) = 0.393, \qquad
+    \text{SE}(\hat{\beta}_2) = 0.544\]</span></p>
+    <p><strong>Step 6: t-tests (df <span class="math inline">\(=
+    2\)</span>, critical value <span class="math inline">\(t_{0.025,2} =
+    4.303\)</span>).</strong></p>
+    <p><span class="math display">\[t_0 = 0.6/1.058 = 0.57 \quad (p &gt;
+    0.05)\]</span></p>
+    <p><span class="math display">\[t_1 = 2.8/0.393 = 7.12 \quad (p &lt;
+    0.05)\]</span></p>
+    <p><span class="math display">\[t_2 = 5.0/0.544 = 9.19 \quad (p &lt;
+    0.05)\]</span></p>
+    <p>Both predictors are significant; the intercept is not
+    distinguishable from zero with only five observations.</p>
+    <p><strong>Step 7: F-test and <span
+    class="math inline">\(R^2\)</span>.</strong></p>
+    <p><span class="math display">\[\text{TSS} = \sum(y_i - \bar{y})^2 =
+    350, \quad \bar{y} = 21\]</span></p>
+    <p><span class="math display">\[R^2 = 1 - \frac{1.60}{350} = 0.9954,
+    \qquad R^2_{\text{adj}} = 1 - \frac{0.80}{87.5} =
+    0.9909\]</span></p>
+    <p><span class="math display">\[F = \frac{(350 - 1.60)/2}{1.60/2} =
+    \frac{174.2}{0.80} = 217.8 \gg F_{0.05,\,2,\,2} = 19.0\]</span></p>
+    <p>The model is highly significant overall.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>In
+    <a href="../../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html">Simple
+    Linear Regression</a> the fitted model is a line through a 2D
+    scatter. With two predictors the model becomes a plane through a 3D
+    scatter. With <span class="math inline">\(p\)</span> predictors it
+    is a hyperplane in <span
+    class="math inline">\((p+1)\)</span>-dimensional space: impossible
+    to draw, but the algebra is identical.</p>
+    <p><img src="../../../images/multiple_linear_regression.png" /></p>
+    <p>The left panel shows a 3D scatter of synthetic data with the
+    fitted regression plane. Every point’s vertical distance to the
+    plane is its residual; OLS finds the plane that minimises the sum of
+    squared vertical distances simultaneously. The right panel shows
+    actual versus predicted values: a model with a perfect fit would
+    place all points on the diagonal, so the scatter around it measures
+    the residual variance.</p>
+    <p>The key gain over separate simple regressions is that <span
+    class="math inline">\(\hat{\beta}_j\)</span> is the effect of <span
+    class="math inline">\(x_j\)</span> with all other predictors held
+    fixed. If <span class="math inline">\(x_1\)</span> and <span
+    class="math inline">\(x_2\)</span> are correlated, a simple
+    regression of <span class="math inline">\(y\)</span> on <span
+    class="math inline">\(x_1\)</span> will absorb some of <span
+    class="math inline">\(x_2\)</span>’s effect into <span
+    class="math inline">\(\hat{\beta}_1\)</span>, biasing it. MLR
+    corrects for this by projecting out the variation in <span
+    class="math inline">\(x_1\)</span> that is explained by the other
+    predictors before estimating its coefficient.</p>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“<span class="math inline">\(\hat{\beta}_j\)</span> is
+    the effect of <span class="math inline">\(x_j\)</span> on <span
+    class="math inline">\(y\)</span>.”</strong> It is the effect of
+    <span class="math inline">\(x_j\)</span> on <span
+    class="math inline">\(y\)</span> holding all other predictors in the
+    model constant. Add or remove a predictor and every coefficient can
+    change, sometimes dramatically.</p>
+    <p><strong>“Adding more predictors improves the model.”</strong>
+    <span class="math inline">\(R^2\)</span> always increases with more
+    predictors, even if those predictors are pure noise. Use <span
+    class="math inline">\(R^2_{\text{adj}}\)</span>, AIC, or BIC for
+    model selection, or an explicit F-test comparing nested models.</p>
+    <p><strong>“A large coefficient means an important
+    predictor.”</strong> Coefficients are in the units of the predictor.
+    A coefficient of 0.001 on GDP (in dollars) can represent a larger
+    effect than a coefficient of 10 on a binary indicator. Standardise
+    predictors or compare effect sizes before judging importance.</p>
+    <p><strong>“Multicollinearity biases the coefficients.”</strong>
+    Multicollinearity does not bias <span
+    class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>; OLS remains
+    unbiased. What it does is inflate standard errors, making
+    coefficients individually insignificant even when the predictors
+    jointly explain a lot of variance. The F-test can be significant
+    while all t-tests fail.</p>
+    <p><strong>“If <span class="math inline">\(p &gt; n\)</span>, OLS
+    still works.”</strong> When the number of predictors exceeds the
+    number of observations, <span
+    class="math inline">\(\mathbf{X}^T\mathbf{X}\)</span> is singular
+    and the inverse does not exist. Regularisation (ridge, lasso) or
+    dimensionality reduction is required.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><a href="../../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html">Simple
+    Linear Regression</a>, <span class="wikilink"
+    title="See: Gauss-Markov Theorem">Gauss-Markov Theorem</span>,
+    <a href="../../../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a>, <span class="wikilink"
+    title="See: Generalized Linear Models">Generalized Linear
+    Models</span>,
+    <a href="../../../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>,
+    <a href="../../../hypothesis-testing/p-value.html">p-value</a></p>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <p>James, G., Witten, D., Hastie, T., &amp; Tibshirani, R. (2021).
+    <em>An Introduction to Statistical Learning</em> (2nd ed.).
+    Springer. Chapter 3.</p>
+    <p>Freedman, D., Pisani, R., &amp; Purves, R. (2007).
+    <em>Statistics</em> (4th ed.). W. W. Norton.</p>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <a href="../../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html" class="note-nav-link note-nav-prev">
+    <span>
+      <span class="note-nav-label">&#8592; Previous</span>
+      <span class="note-nav-title">Simple Linear Regression</span>
+    </span>
+  </a>
+    </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>

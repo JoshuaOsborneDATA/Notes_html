@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What is Hypothesis
+Testing? — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    background-color: #232629;
+    color: #7a7c7d;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+  { color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */</style>
+  <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>What is Hypothesis Testing?</h1>
+  <p class="notes-hero-sub">The end-to-end framework for deciding
+whether an observed difference is real.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    
+  </div>
+  <div class="note-body">
+    <p>We perform hypothesis testing when we want to decide whether what
+    we observed in an experiment is different from what we would expect
+    if we had not changed anything from an original experiment.</p>
+    <p>For example, say I work at Pinterest and I want to know: if I
+    start including videos into the platform, will it improve user
+    engagement? To do this I split my users into two groups: a control
+    group that gets the platform as it currently is (only pictures), and
+    another group who gets a mix of photos and videos. My hypothesis
+    (referred to as the <strong>null hypothesis</strong>, often written
+    as <span class="math inline">\(H_0\)</span>) is that nothing will
+    change, meaning that users will still engage the same amount as they
+    did before. The alternative hypothesis (written <span
+    class="math inline">\(H_1\)</span>) would be that including videos
+    improves user engagement. Written mathematically:</p>
+    <p><span class="math display">\[H_0:\mu_{treatment} =
+    \mu_{control}\]</span></p>
+    <p><span class="math display">\[H_1:\mu_{treatment} &gt;
+    \mu_{control}\]</span></p>
+    <p>Where <span class="math inline">\(\mu\)</span> is the <span
+    class="wikilink" title="See: mean">mean</span>. Your hypothesis test
+    does not necessarily need to be used on the mean, but the mean has
+    nice mathematical properties that make it commonly used (refer to <a
+    href="mean.md#properties">mean properties</a>), however you could
+    use the <span class="wikilink" title="See: median">median</span>,
+    <span class="wikilink" title="See: mode">mode</span>, etc.</p>
+    <p>You may often see the following table when talking about
+    hypothesis testing:</p>
+    <table>
+    <colgroup>
+    <col style="width: 32%" />
+    <col style="width: 30%" />
+    <col style="width: 37%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th></th>
+    <th><span class="math inline">\(H_0\)</span> is True</th>
+    <th><span class="math inline">\(H_0\)</span> is False</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><strong>Reject <span
+    class="math inline">\(H_0\)</span></strong></td>
+    <td>Type I error (<span class="math inline">\(\alpha\)</span>)</td>
+    <td>Correct ✓ (Power: <span
+    class="math inline">\(1-\beta\)</span>)</td>
+    </tr>
+    <tr>
+    <td><strong>Fail to reject <span
+    class="math inline">\(H_0\)</span></strong></td>
+    <td>Correct ✓</td>
+    <td>Type II error (<span class="math inline">\(\beta\)</span>)</td>
+    </tr>
+    </tbody>
+    </table>
+    <ul>
+    <li><p><strong><span class="math inline">\(\alpha\)</span> (Type I
+    error / false positive):</strong> the probability of rejecting <span
+    class="math inline">\(H_0\)</span> when it is actually true. You set
+    this before the experiment and is typically set to 0.05. It is the
+    rate of false alarms you are willing to tolerate.</p></li>
+    <li><p><strong><span class="math inline">\(\beta\)</span> (Type II
+    error / false negative):</strong> the probability of failing to
+    reject <span class="math inline">\(H_0\)</span> when it is actually
+    false, i.e. missing a real effect. Commonly set to 0.2.</p></li>
+    <li><p><strong>Power (<span class="math inline">\(1 -
+    \beta\)</span>):</strong> the probability of correctly detecting a
+    real effect when one exists. A power of 0.8 means you have an 80%
+    chance of catching a true difference. Power increases with larger
+    sample size and larger effect size.</p></li>
+    </ul>
+    <p>Once you have decided on your <span
+    class="math inline">\(H_0\)</span>, you should then decide on your
+    <span class="math inline">\(\alpha\)</span> value, which represents
+    how many false positives you are willing to accept. Another way to
+    think about it is: if we ran an A/A test (meaning the control and
+    treatment group are from an identical population such that <span
+    class="math inline">\(\mu_{treatment}=\mu_{control}\)</span>) 100
+    times, we would identify 5 times when we rejected the null (the
+    control and treatment mean are not equal). To define our confidence
+    in rejecting <span class="math inline">\(H_0\)</span>, we say that
+    we reject the null when the
+    <a href="../hypothesis-testing/p-value.html">p-value</a> is less
+    than alpha:</p>
+    <p><span class="math display">\[p&lt;\alpha\]</span></p>
+    <p>To get the p-value we must first decide on a <span
+    class="wikilink" title="See: test-statistic">test-statistic</span>.
+    For the example I will give below, I will use the one-tailed <span
+    class="wikilink" title="See: z-test">z-test</span> and get the
+    z-statistic in order to get the p-value. You may be asking why the
+    one-tailed test? The answer is that we only care if our experiment
+    raised the number of saved pins.</p>
+    <div class="note-callout">
+    <p><strong>NOTE:</strong> <em>I’ve slightly changed the experiment
+    from what is described up above to avoid a ratio metric as this
+    requires more work and we will go over real world applications and
+    use real world metrics in another <span class="wikilink"
+    title="See: Applied Notes">Applied Notes</span></em></p>
+    </div>
+    <hr />
+    <p><strong>The Data</strong></p>
+    <p>We measure <strong>total pins saved during the
+    experiment</strong> for each user.</p>
+    <table>
+    <colgroup>
+    <col style="width: 36%" />
+    <col style="width: 28%" />
+    <col style="width: 36%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th></th>
+    <th>Control (photos only)</th>
+    <th>Treatment (photos + videos)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>Users (n)</td>
+    <td>10,000</td>
+    <td>10,000</td>
+    </tr>
+    <tr>
+    <td>Mean pins saved (<span
+    class="math inline">\(\bar{x}\)</span>)</td>
+    <td>8.2</td>
+    <td>9.4</td>
+    </tr>
+    <tr>
+    <td>Std deviation (s)</td>
+    <td>3.5</td>
+    <td>4.0</td>
+    </tr>
+    </tbody>
+    </table>
+    <hr />
+    <p><strong>What You Need to Calculate</strong></p>
+    <p><strong>Step 1:</strong> Calculate the <span class="wikilink"
+    title="See: Standard Error">Standard Error</span> (SE)</p>
+    <p><span class="math display">\[SE = \sqrt{\frac{s_1^2}{n_1} +
+    \frac{s_2^2}{n_2}}=\sqrt{\frac{3.5^2}{10000} +
+    \frac{4.0^2}{10000}}=0.053\]</span></p>
+    <p><strong>Step 2:</strong> Calculate the Z-statistic</p>
+    <p><span class="math display">\[z = \frac{\bar{x}_2 - \bar{x}_1}{SE}
+    = \frac{9.4-8.2}{0.053}=22.64\]</span></p>
+    <p><strong>Step 3:</strong> Get the P-value</p>
+    <p><span class="math inline">\(p = 1-F(z)\)</span>, where <span
+    class="math inline">\(F\)</span> is the <span class="wikilink"
+    title="See: cumulative distribution function">cumulative
+    distribution function</span></p>
+    <p><span class="math inline">\(p=0.0\)</span></p>
+    <p><strong>Step 4:</strong> Make a decision</p>
+    <p><span class="math inline">\(p&lt;0.05\)</span>, so we can safely
+    reject the null hypothesis. Now in industry you may be asked if you
+    should ship this or not. There is one step left of calculating the
+    <a href="../hypothesis-testing/confidence-intervals.html">confidence
+    intervals</a>. In our case, the CI does not cross zero, so we would
+    likely want to ship this.</p>
+    <hr />
+    <p><strong>The Python code</strong></p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> math <span class="im">import</span> sqrt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>std1, std2   <span class="op">=</span> <span class="fl">3.5</span>, <span class="fl">4.0</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>xbar1, xbar2 <span class="op">=</span> <span class="fl">8.2</span>, <span class="fl">9.4</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>n1, n2 <span class="op">=</span> <span class="dv">10000</span>, <span class="dv">10000</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.05</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>SE <span class="op">=</span> sqrt(std1<span class="op">**</span><span class="dv">2</span><span class="op">/</span>n1 <span class="op">+</span> std2<span class="op">**</span><span class="dv">2</span><span class="op">/</span>n2)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>mean_diff <span class="op">=</span> xbar2 <span class="op">-</span> xbar1</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> mean_diff <span class="op">/</span> SE</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>z_alpha2 <span class="op">=</span> stats.norm.ppf(<span class="dv">1</span> <span class="op">-</span> alpha<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> stats.norm.cdf(z)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>CI <span class="op">=</span> (mean_diff <span class="op">-</span> z_alpha2<span class="op">*</span>SE, mean_diff <span class="op">+</span> z_alpha2<span class="op">*</span>SE)  <span class="co"># confidence interval</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> p <span class="op">&lt;</span> alpha:</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;reject the null&quot;</span>)</span></code></pre></div>
+  </div>
+</div>
+
+<div class="note-nav">
+    <span></span>
+      <a href="../hypothesis-testing/p-value.html" class="note-nav-link note-nav-next">
+    <span>
+      <span class="note-nav-label">Next &#8594;</span>
+      <span class="note-nav-title">P-Value</span>
+    </span>
+  </a>
+  </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>

@@ -21,7 +21,44 @@ Regression — Statistics Notes | Joshua Osborne</title>
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
   <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
     /* Nav: minimal standalone */
     nav a.logo { color: var(--white) !important; }
     nav a.logo:hover { opacity: .85; text-decoration: none; }
@@ -300,8 +337,8 @@ errors, t-test, and R² from scratch.</p>
     Because it only has two parameters, it is also easy to estimate.
     Also, many relationships are close enough to being linear (look at
     the fit between the body mass and flipper length of penguins in
-    <span class="wikilink" title="See: What is machine learning">What is
-    machine learning</span>). It also has an analytical answer for the
+    <a href="../../../machine-learning/what-is-machine-learning.html">What
+    is machine learning</a>). It also has an analytical answer for the
     best fit line.</p>
     </section>
     <section id="formal-definition" class="level2">
@@ -647,9 +684,9 @@ errors, t-test, and R² from scratch.</p>
     class="math inline">\(x\)</span> carries real information about
     <span class="math inline">\(y\)</span>.</p>
     <p><strong>Confidence intervals</strong></p>
-    <p>A 95% <span class="wikilink"
-    title="See: confidence intervals">confidence interval</span> for
-    each parameter is:</p>
+    <p>A 95%
+    <a href="../../../hypothesis-testing/confidence-intervals.html">confidence
+    interval</a> for each parameter is:</p>
     <p><span class="math display">\[\hat\beta_j \pm t_{n-2,\,0.025}
     \cdot \text{SE}(\hat\beta_j)\]</span></p>
     <p><strong>Goodness of fit: <span
@@ -835,9 +872,9 @@ errors, t-test, and R² from scratch.</p>
     reality is that you typically have more than one predictor and these
     predictors can be (and very often are) correlated with each other.
     To handle these problems requires something slightly more
-    sophisticated: <span class="wikilink"
-    title="See: Multiple Linear Regression">Multiple Linear
-    Regression</span>.</p>
+    sophisticated:
+    <a href="../../../machine-learning/supervised/linear-regression-models/multiple-linear-regression.html">Multiple
+    Linear Regression</a>.</p>
     </section>
     <section id="common-misconceptions" class="level2">
     <h2>Common Misconceptions</h2>
@@ -873,9 +910,9 @@ errors, t-test, and R² from scratch.</p>
     <section id="connections" class="level2">
     <h2>Connections</h2>
     <p><span class="wikilink"
-    title="See: Gauss-Markov Theorem">Gauss-Markov Theorem</span>, <span
-    class="wikilink" title="See: bias-variance tradeoff">bias-variance
-    tradeoff</span>, <span class="wikilink"
+    title="See: Gauss-Markov Theorem">Gauss-Markov Theorem</span>,
+    <a href="../../../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a>, <span class="wikilink"
     title="See: Generalized Linear Models">Generalized Linear
     Models</span>, <span class="wikilink"
     title="See: R-squared">R-squared</span>, <span class="wikilink"

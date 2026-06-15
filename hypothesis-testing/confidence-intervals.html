@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confidence
+Intervals — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
+  <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>Confidence Intervals</h1>
+  <p class="notes-hero-sub">A range computed from sample data that,
+across repeated samples, contains the true parameter at the stated
+confidence level.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>A confidence interval is a range computed from sample data such
+    that, if the procedure were repeated across many independent
+    samples, the interval would contain the true parameter a specified
+    fraction of the time.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>A point estimate such as <span class="math inline">\(\bar{x} =
+    78\)</span> communicates nothing about uncertainty. Two studies can
+    produce the same estimate with very different precision depending on
+    sample size and variability. A confidence interval gives both the
+    estimate and its uncertainty into a single interpretable range.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>A confidence interval is a lower bound, <span
+    class="math inline">\(L\)</span>, and upper bound, <span
+    class="math inline">\(U\)</span>, computed from the sample, such
+    that the probability that the interval contains true parameter is at
+    least the stated confidence level. The confidence is a property of
+    the procedure: if you were to repeat the study many times and
+    compute a CI each time, the specified percentage of those intervals
+    would contain the true parameter. A single computed interval either
+    contains the true parameter or it does not.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    <col style="width: 33%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(\theta\)</span></td>
+    <td>scalar</td>
+    <td>Unknown population parameter</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\bar{x}\)</span></td>
+    <td>scalar</td>
+    <td>Sample mean</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mu\)</span></td>
+    <td>scalar</td>
+    <td>True population mean</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\sigma\)</span></td>
+    <td>scalar</td>
+    <td>Population standard deviation (assumed known for
+    z-interval)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(s\)</span></td>
+    <td>scalar</td>
+    <td>Sample standard deviation (estimated from data)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>Sample size</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\alpha\)</span></td>
+    <td>scalar <span class="math inline">\(\in (0,1)\)</span></td>
+    <td>Significance level; confidence level is <span
+    class="math inline">\(1 - \alpha\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(z_{\alpha/2}\)</span></td>
+    <td>scalar</td>
+    <td>Upper <span class="math inline">\(\alpha/2\)</span> critical
+    value of the standard normal</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(t_{\alpha/2,\, n-1}\)</span></td>
+    <td>scalar</td>
+    <td>Upper <span class="math inline">\(\alpha/2\)</span> critical
+    value of the t-distribution with <span
+    class="math inline">\(n-1\)</span> degrees of freedom</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(E\)</span></td>
+    <td>scalar</td>
+    <td>Margin of error (half-width of the interval)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\([L, U]\)</span></td>
+    <td>interval</td>
+    <td>Lower and upper bounds of the confidence interval</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <p><strong>Case 1: Known <span class="math inline">\(\sigma\)</span>
+    (z-interval)</strong></p>
+    <p><span class="math display">\[\bar{x} \pm z_{\alpha/2} \cdot
+    \frac{\sigma}{\sqrt{n}}\]</span></p>
+    <p>Common critical values: <span class="math inline">\(z_{0.025} =
+    1.960\)</span> (95%), <span class="math inline">\(z_{0.005} =
+    2.576\)</span> (99%).</p>
+    <p><strong>Case 2: Unknown <span
+    class="math inline">\(\sigma\)</span> (t-interval)</strong></p>
+    <p><span class="math display">\[\bar{x} \pm t_{\alpha/2,\, n-1}
+    \cdot \frac{s}{\sqrt{n}}\]</span></p>
+    <p>The t-interval is wider than the z-interval to account for
+    estimating <span class="math inline">\(\sigma\)</span> from data. As
+    <span class="math inline">\(n \to \infty\)</span>, <span
+    class="math inline">\(t_{\alpha/2, n-1} \to
+    z_{\alpha/2}\)</span>.</p>
+    <p><strong>Margin of error:</strong></p>
+    <p><span class="math display">\[E = z_{\alpha/2} \cdot
+    \frac{\sigma}{\sqrt{n}}\]</span></p>
+    <p><strong>Required sample size for a target margin of error <span
+    class="math inline">\(E\)</span>:</strong></p>
+    <p><span class="math display">\[n = \left\lceil
+    \left(\frac{z_{\alpha/2} \cdot \sigma}{E}\right)^2
+    \right\rceil\]</span></p>
+    <p><strong>Width of the CI:</strong></p>
+    <p><span class="math display">\[\text{width} = 2E = \frac{2\,
+    z_{\alpha/2} \cdot \sigma}{\sqrt{n}}\]</span></p>
+    <p>Width shrinks as <span class="math inline">\(n\)</span> grows and
+    grows as <span class="math inline">\(\sigma\)</span> grows.</p>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p>25 students take an exam. The sample mean is <span
+    class="math inline">\(\bar{x} = 78\)</span> and the sample standard
+    deviation is <span class="math inline">\(s = 10\)</span>. Construct
+    a 95% confidence interval for the true mean score.</p>
+    <p>Setup:</p>
+    <ul>
+    <li>Unknown <span class="math inline">\(\sigma\)</span>, use
+    t-interval</li>
+    <li><span class="math inline">\(t_{0.025,\, 24} = 2.064\)</span> (24
+    degrees of freedom)</li>
+    </ul>
+    <p>Compute: <span class="math display">\[E = 2.064 \times
+    \frac{10}{\sqrt{25}} = 2.064 \times 2 = 4.13\]</span></p>
+    <p><span class="math display">\[\text{CI} = [78 - 4.13,\; 78 + 4.13]
+    = [73.87,\; 82.13]\]</span></p>
+    <p>Correct interpretation: this procedure, applied to many
+    independent samples of size 25, would produce intervals containing
+    the true mean 95% of the time. For this specific interval [73.87,
+    82.13], the true mean either is or is not inside it.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>Imagine running the same study 100 times on different random
+    samples. Each time you compute a 95% CI. About 95 of those 100
+    intervals will capture the true <span
+    class="math inline">\(\mu\)</span>; about 5 will miss it. You never
+    know whether your single observed interval is among the 95 or the
+    5.</p>
+    <p><img src="../images/ci_figures.png" /></p>
+    <p>The width of the interval shows the precision-confidence tradeoff
+    directly:</p>
+    <ul>
+    <li><p>A 99% CI is wider than a 95% CI for the same data: more
+    confidence requires a wider net.</p></li>
+    <li><p>Doubling <span class="math inline">\(n\)</span> shrinks the
+    half-width by a factor of <span
+    class="math inline">\(\sqrt{2}\)</span>: precision improves
+    slowly.</p></li>
+    </ul>
+    <p>The CI and
+    <a href="../hypothesis-testing/p-value.html">p-value</a> are dual
+    representations of the same evidence. For a two-sided test of <span
+    class="math inline">\(H_0: \mu = \mu_0\)</span> at level <span
+    class="math inline">\(\alpha\)</span>, rejecting <span
+    class="math inline">\(H_0\)</span> is equivalent to <span
+    class="math inline">\(\mu_0\)</span> falling outside the <span
+    class="math inline">\(100(1 - \alpha)\%\)</span> CI. They cannot
+    disagree: if <span class="math inline">\(p &lt; \alpha\)</span>, the
+    null value is guaranteed to lie outside the CI, and vice versa.</p>
+    <p>In practice, report both. The p-value gives you the binary
+    decision: reject or not. The CI gives you what the p-value cannot:
+    the direction and magnitude of the effect. A result with <span
+    class="math inline">\(p = 0.03\)</span> and CI <span
+    class="math inline">\(= [0.001, 0.15]\)</span> is statistically
+    significant but the effect may be too small to matter practically. A
+    result with <span class="math inline">\(p = 0.03\)</span> and CI
+    <span class="math inline">\(= [12.4, 31.6]\)</span> points to a
+    large, meaningful effect. The p-value alone cannot tell these
+    apart.</p>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“There is a 95% probability the true mean is in this
+    specific interval.”</strong> Once computed, <span
+    class="math inline">\(\mu\)</span> is either inside [73.87, 82.13]
+    or outside it. The 95% is a property of the procedure across many
+    repetitions, not of the probability that <span
+    class="math inline">\(\mu\)</span> is in any particular interval.
+    The Bayesian counterpart that does make this statement is the
+    <a href="../probability-theory/bayesian-statistics/credible-interval.html">Credible
+    Interval</a>.</p>
+    <p><strong>“95% of the data falls in the CI.”</strong> That
+    describes a <span class="wikilink"
+    title="See: prediction interval">prediction interval</span>, which
+    is always wider. A CI covers the parameter, not individual
+    observations.</p>
+    <p><strong>“A wider CI means a worse study.”</strong> A wider CI can
+    reflect small sample size or high variability.</p>
+    <p><strong>“Overlapping CIs mean no significant
+    difference.”</strong> Two 95% CIs for two means can overlap while a
+    direct test of their difference is significant. The test for a
+    difference uses the standard error of the difference, which is not
+    the same as comparing two individual intervals.</p>
+    <p><strong>“The CI and the p-value always agree.”</strong> Only for
+    a two-sided test: <span class="math inline">\(\mu_0 \notin
+    \text{CI}_{1-\alpha}\)</span> if and only if <span
+    class="math inline">\(p &lt; \alpha\)</span>. For one-sided tests
+    and more complex hypotheses, the equivalence does not always
+    hold.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><a href="../hypothesis-testing/p-value.html">p-value</a>, <span
+    class="wikilink" title="See: t-test">t-test</span>, <span
+    class="wikilink" title="See: Standard Error">Standard Error</span>,
+    <a href="../probability-theory/bayesian-statistics/credible-interval.html">Credible
+    Interval</a>,
+    <a href="../hypothesis-testing/what-is-hypothesis-testing.html">What
+    is Hypothesis Testing</a></p>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <ul>
+    <li>Morey, R. D., et al. (2016). The fallacy of placing confidence
+    in confidence intervals. <em>Psychonomic Bulletin &amp; Review</em>,
+    23, 103–123.</li>
+    <li>Greenland, S., et al. (2016). Statistical tests, P values,
+    confidence intervals, and power. <em>European Journal of
+    Epidemiology</em>, 31, 337–350.</li>
+    </ul>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <a href="../hypothesis-testing/p-value.html" class="note-nav-link note-nav-prev">
+    <span>
+      <span class="note-nav-label">&#8592; Previous</span>
+      <span class="note-nav-title">P-Value</span>
+    </span>
+  </a>
+      <a href="../probability-theory/bayesian-statistics/credible-interval.html" class="note-nav-link note-nav-next">
+    <span>
+      <span class="note-nav-label">Next &#8594;</span>
+      <span class="note-nav-title">Credible Interval</span>
+    </span>
+  </a>
+  </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>

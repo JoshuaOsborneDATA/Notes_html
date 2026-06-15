@@ -20,7 +20,44 @@
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
   <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
     /* Nav: minimal standalone */
     nav a.logo { color: var(--white) !important; }
     nav a.logo:hover { opacity: .85; text-decoration: none; }
@@ -310,8 +347,8 @@ shapes, automatic cluster count, and explicit noise labeling.</p>
     </section>
     <section id="formal-definition" class="level2">
     <h2>Formal Definition</h2>
-    <p>DBSCAN partitions a dataset <span
-    class="math inline">\(D\)</span> of <span
+    <p>DBSCAN partitions a dataset, <span
+    class="math inline">\(D\)</span>, of <span
     class="math inline">\(n\)</span> points into clusters and noise
     using two user-supplied parameters: a radius <span
     class="math inline">\(\varepsilon\)</span> and a density threshold
@@ -397,8 +434,8 @@ shapes, automatic cluster count, and explicit noise labeling.</p>
     <section id="key-equations" class="level2">
     <h2>Key Equations</h2>
     <p>DBSCAN has no loss function to minimize. Instead it is defined by
-    four cascading geometric predicates, followed by an expansion
-    algorithm that applies them.</p>
+    four geometric predicates, followed by an expansion algorithm that
+    applies them.</p>
     <p><strong>Step 1: <span
     class="math inline">\(\varepsilon\)</span>-neighborhood.</strong></p>
     <p>The neighborhood of a point is the set of all points within
@@ -426,7 +463,7 @@ shapes, automatic cluster count, and explicit noise labeling.</p>
     N_\varepsilon(q) \text{ and } |N_\varepsilon(q)| \geq
     \text{minPts}\]</span></p>
     <p>Just to reiterate, the equation above is saying “p has too few
-    neighbors to be a core point, but there exists some other point q
+    neighbors to be a core point, but there exists some other point, q,
     that is a core point and that has p inside its neighborhood.”.
     Border points are assigned to the cluster of whichever core point
     first reaches them during expansion. If a border point lies within
@@ -449,7 +486,7 @@ shapes, automatic cluster count, and explicit noise labeling.</p>
     core point</li>
     </ol>
     <p>Only a core point can be a source of direct density-reachability.
-    A border point can be reached but cannot itself propagate the chain
+    A border point can be reached but cannot propagate the chain
     forward.</p>
     <p><strong>Step 4: Density-reachable.</strong></p>
     <p><span class="math inline">\(q\)</span> is
@@ -503,7 +540,7 @@ shapes, automatic cluster count, and explicit noise labeling.</p>
     class="math inline">\(p, q \in C\)</span> is
     density-connected</p></li>
     </ul>
-    <p>A point <span class="math inline">\(p\)</span> is
+    <p>A point, <span class="math inline">\(p\)</span>, is
     <strong>noise</strong> if it belongs to no cluster. It is neither a
     core point nor a border point.</p>
     <p><strong>Step 7: Algorithm procedure.</strong></p>
@@ -816,10 +853,11 @@ shapes, automatic cluster count, and explicit noise labeling.</p>
     class="wikilink" title="See: HDBScan">HDBScan</span>, <span
     class="wikilink" title="See: Hierarchical clustering">Hierarchical
     clustering</span>, <span class="wikilink"
-    title="See: C-means">C-means</span>, <span class="wikilink"
-    title="See: bias-variance tradeoff">bias-variance tradeoff</span>,
-    <span class="wikilink" title="See: k-d tree">k-d tree</span>, <span
-    class="wikilink" title="See: ball tree">ball tree</span></p>
+    title="See: C-means">C-means</span>,
+    <a href="../../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a>, <span class="wikilink" title="See: k-d tree">k-d
+    tree</span>, <span class="wikilink" title="See: ball tree">ball
+    tree</span></p>
     </section>
     <section id="references" class="level2">
     <h2>References</h2>

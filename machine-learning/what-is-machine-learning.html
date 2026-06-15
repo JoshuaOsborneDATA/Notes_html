@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>$title$ — Statistics Notes | Joshua Osborne</title>
+  <title>What is Machine
+Learning — Statistics Notes | Joshua Osborne</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
   <script>
     (function(){
@@ -13,14 +14,14 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="$root$style.css" />
+  <link rel="stylesheet" href="../../style.css" />
   <script>
     MathJax = {
       tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-  $if(highlighting-css)$<style>$highlighting-css$</style>$endif$
+  
   <style>
     /* Code blocks */
     .note-body pre {
@@ -273,9 +274,9 @@
 <body>
 
 <nav>
-  <a class="logo" href="$root$index.html">Joshua Osborne</a>
+  <a class="logo" href="../../index.html">Joshua Osborne</a>
   <div class="nav-actions">
-    <a class="nav-back" href="$notesroot$index.html">&#8592; Notes</a>
+    <a class="nav-back" href="../index.html">&#8592; Notes</a>
     <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
       <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -285,44 +286,209 @@
 
 <div class="notes-hero">
   <p class="section-label">Statistics Notes</p>
-  <h1>$title$</h1>
-  <p class="notes-hero-sub">$if(description)$$description$$else$Intuition, full derivations, and worked examples.$endif$</p>
-  $if(author)$<p class="notes-hero-author">by $author$</p>$endif$
+  <h1>What is Machine Learning</h1>
+  <p class="notes-hero-sub">Prediction vs inference, supervised vs
+unsupervised learning, and why we estimate f.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
 </div>
 
 <div class="note-layout">
   <div class="note-toc">
     <p class="note-toc-label">Contents</p>
-    $table-of-contents$
+    <ul>
+    <li><a href="#why-fit-a-model-at-all"
+    id="toc-why-fit-a-model-at-all">Why fit a model at all?</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#supervised-vs-unsupervised-learning"
+    id="toc-supervised-vs-unsupervised-learning">Supervised vs
+    Unsupervised Learning</a></li>
+    <li><a href="#where-the-other-notes-hang-off-this-one"
+    id="toc-where-the-other-notes-hang-off-this-one">Where the other
+    notes hang off this one</a></li>
+    </ul>
   </div>
   <div class="note-body">
-    $body$
+    <p>Assume we have some data that can be represented by the general
+    equation: <span class="math display">\[Y = f(X) + \epsilon
+    \tag{1}\]</span> where <span class="math inline">\(\epsilon\)</span>
+    represents the error in our prediction. There are two types of
+    error: reducible and irreducible. In this case, <span
+    class="math inline">\(\epsilon\)</span> represents our irreducible
+    error; for more information on this topic, visit the
+    <a href="../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a>. notice the use of “X” here rather than “x”. Here, X
+    represents a group of <span class="math inline">\(X = (x_1, x_2,
+    ..., x_p)\)</span> predictors.</p>
+    <p>put in simple words: we are trying to find a function, f, that
+    given an input, x, can predict the true value, y or to make a
+    prediction for future information. An example is in the penguin
+    dataset when comparing the body mass to the flipper length: <img
+    src="../images/penguin_linear_regression.png" /> in this case
+    flipper length is the independent variable (x) and the body mass is
+    the dependent variable (y), and the function we used was a simple
+    linear line: <span class="math inline">\(y=\beta_0 +
+    \beta_1*x_1\)</span> . Although I have shown a simple linear fit
+    here, the reality is that we can fit very complex functions to our
+    dataset (although it is clearly not needed here).</p>
+    <section id="why-fit-a-model-at-all" class="level2">
+    <h2>Why fit a model at all?</h2>
+    <p>There are really only two reasons we ever estimate <span
+    class="math inline">\(f\)</span>, and it is worth being honest about
+    which one you are doing because it changes how you build the
+    model:</p>
+    <p><strong>Prediction</strong>: we just want accurate outputs for
+    new inputs. We treat <span class="math inline">\(\hat{f}\)</span> as
+    a black box; nobody cares what is inside as long as <span
+    class="math inline">\(\hat{y} = \hat{f}(x)\)</span> lands close to
+    the truth. A model forecasting tomorrow’s electricity demand is
+    doing prediction.</p>
+    <p><strong>Inference</strong>: we want to understand <em>how</em>
+    <span class="math inline">\(Y\)</span> changes with each predictor.
+    Which predictors matter? Is the relationship positive or negative?
+    Linear or more complicated? Here the form of <span
+    class="math inline">\(\hat{f}\)</span> is the entire point, and a
+    black box is useless. Asking “does flipper length actually drive
+    body mass, and by how much per mm?” is inference.</p>
+    <p>The tension: flexible models (deep nets, boosted trees) tend to
+    predict better but explain worse; simple models (linear regression,
+    <span class="wikilink"
+    title="See: Generalized Linear Models">Generalized Linear
+    Models</span>) explain beautifully but may underfit. This is the
+    same tension as the
+    <a href="../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a>, wearing different clothes.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 23%" />
+    <col style="width: 10%" />
+    <col style="width: 66%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(Y\)</span></td>
+    <td>scalar</td>
+    <td>true value of the response variable</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(X\)</span></td>
+    <td>vector</td>
+    <td>the group of predictors <span class="math inline">\((x_1, x_2,
+    ..., x_p)\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(p\)</span></td>
+    <td>integer</td>
+    <td>number of predictors</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(f\)</span></td>
+    <td>function</td>
+    <td>the true (unknown) relationship between <span
+    class="math inline">\(X\)</span> and <span
+    class="math inline">\(Y\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{f}\)</span></td>
+    <td>function</td>
+    <td>our estimate of <span class="math inline">\(f\)</span>, learned
+    from training data</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{y}\)</span></td>
+    <td>scalar</td>
+    <td>our model’s prediction, <span
+    class="math inline">\(\hat{f}(x)\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\epsilon\)</span></td>
+    <td>scalar</td>
+    <td>irreducible error, <span
+    class="math inline">\(\mathbb{E}[\epsilon] = 0\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\beta_0, \beta_1\)</span></td>
+    <td>scalars</td>
+    <td>intercept and slope parameters in a linear model</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>number of observations in the training data</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="supervised-vs-unsupervised-learning" class="level2">
+    <h2>Supervised vs Unsupervised Learning</h2>
+    <p>There are two types of machine learning: <span class="wikilink"
+    title="See: supervised learning">supervised learning</span> and
+    <span class="wikilink"
+    title="See: unsupervised learning">unsupervised learning</span>.</p>
+    <p><strong>Supervised learning</strong> is everything described
+    above: every training observation comes as a pair <span
+    class="math inline">\((x_i, y_i)\)</span>, so the data itself
+    supervises the fit. We know the right answer for the data we trained
+    on, and we can directly measure how wrong the model is. Regression
+    (continuous <span class="math inline">\(y\)</span>, like the penguin
+    body mass) and classification (categorical <span
+    class="math inline">\(y\)</span>, like spam vs not spam in <span
+    class="wikilink" title="See: Naive Bayes">Naive Bayes</span>) are
+    the two big families.</p>
+    <p><strong>Unsupervised learning</strong> has no <span
+    class="math inline">\(y\)</span> at all. We only observe <span
+    class="math inline">\(x_1, ..., x_n\)</span> and the question
+    changes from “predict the response” to “find structure”: are there
+    natural clusters of similar observations? Can the <span
+    class="math inline">\(p\)</span> predictors be compressed into fewer
+    dimensions without losing much? There is no answer key, which makes
+    evaluation fundamentally harder; we can never compute an error
+    against a truth we do not have.</p>
+    <p>a useful mental check: if you deleted one column from your
+    dataset and the whole problem stopped making sense, that column was
+    <span class="math inline">\(y\)</span> and you were doing supervised
+    learning.</p>
+    </section>
+    <section id="where-the-other-notes-hang-off-this-one"
+    class="level2">
+    <h2>Where the other notes hang off this one</h2>
+    <ul>
+    <li><p>the error term <span class="math inline">\(\epsilon\)</span>
+    in equation (1) and what we can and cannot do about it:
+    <a href="../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a></p></li>
+    <li><p>the simple linear fit in the penguin figure, and when OLS is
+    provably the best way to fit it: <span class="wikilink"
+    title="See: Gauss-Markov Theorem">Gauss-Markov
+    Theorem</span></p></li>
+    <li><p>what to do when <span class="math inline">\(y\)</span> is not
+    continuous and unbounded (binary outcomes, counts): <span
+    class="wikilink" title="See: Generalized Linear Models">Generalized
+    Linear Models</span></p></li>
+    <li><p>a classifier built directly from
+    <a href="../probability-theory/bayesian-statistics/bayes-rule.html">Bayes
+    Rule</a>: <span class="wikilink" title="See: Naive Bayes">Naive
+    Bayes</span></p></li>
+    </ul>
+    </section>
   </div>
 </div>
 
 <div class="note-nav">
-  $if(prev)$
-  <a href="$notesroot$$prev$" class="note-nav-link note-nav-prev">
-    <span>
-      <span class="note-nav-label">&#8592; Previous</span>
-      <span class="note-nav-title">$prevtitle$</span>
-    </span>
-  </a>
-  $else$
-  <span></span>
-  $endif$
-  $if(next)$
-  <a href="$notesroot$$next$" class="note-nav-link note-nav-next">
-    <span>
-      <span class="note-nav-label">Next &#8594;</span>
-      <span class="note-nav-title">$nexttitle$</span>
-    </span>
-  </a>
-  $endif$
-</div>
+    <span></span>
+    </div>
 
 <footer>
-  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="$root$index.html">Portfolio</a></p>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../index.html">Portfolio</a></p>
 </footer>
 
 <button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
