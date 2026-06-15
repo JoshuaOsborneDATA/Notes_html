@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Graph — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t = localStorage.getItem('theme');
+      if (t === 'light' || (t == null && window.matchMedia('(prefers-color-scheme:light)').matches)) {
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="graph_data.js"></script>
+  <style>
+    body { overflow: hidden; }
+
+    /* ── Graph shell ──────────────────────────────────────────── */
+    .graph-shell {
+      display: flex;
+      height: calc(100vh - 56px);
+      overflow: hidden;
+    }
+
+    #graph-canvas {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    #graph-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── Toolbar ─────────────────────────────────────────────── */
+    .graph-toolbar {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      z-index: 10;
+    }
+
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .35rem .75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .search-wrap svg {
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    #node-search {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: .85rem;
+      width: 180px;
+    }
+
+    #node-search::placeholder { color: var(--muted); }
+
+    .zoom-controls {
+      display: flex;
+      gap: .3rem;
+    }
+
+    .zoom-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 1.1rem;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      transition: background .15s, color .15s;
+      padding: 0;
+    }
+
+    .zoom-btn:hover { background: var(--mid); color: var(--heading); }
+
+    /* ── Legend ──────────────────────────────────────────────── */
+    .graph-legend {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .65rem .9rem;
+      box-shadow: var(--shadow);
+      z-index: 10;
+    }
+
+    .legend-title {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .45rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .78rem;
+      color: var(--text);
+      line-height: 1.6;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+
+    .legend-item:hover { opacity: .75; }
+    .legend-item.dimmed { opacity: .3; }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Stats badge ─────────────────────────────────────────── */
+    .graph-stats {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .45rem .75rem;
+      font-size: .72rem;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+      z-index: 10;
+    }
+
+    /* ── Tooltip ─────────────────────────────────────────────── */
+    #graph-tooltip {
+      position: fixed;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .45rem .7rem;
+      font-size: .8rem;
+      color: var(--heading);
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      pointer-events: none;
+      z-index: 200;
+      display: none;
+      white-space: nowrap;
+    }
+
+    #graph-tooltip .tt-cat {
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: .1rem;
+    }
+
+    /* ── Info panel ──────────────────────────────────────────── */
+    .info-panel {
+      width: 0;
+      min-width: 0;
+      overflow: hidden;
+      transition: width .25s ease, min-width .25s ease;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .info-panel.open {
+      width: 300px;
+      min-width: 300px;
+    }
+
+    .info-panel-inner {
+      padding: 1.25rem 1.25rem 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .panel-close {
+      position: absolute;
+      top: .6rem;
+      right: .6rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: .2rem;
+      line-height: 1;
+      border-radius: 4px;
+      transition: color .15s;
+    }
+
+    .panel-close:hover { color: var(--heading); }
+
+    .panel-header {
+      position: relative;
+      margin-bottom: 1rem;
+      padding-right: 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--heading);
+      line-height: 1.3;
+      margin-bottom: .35rem;
+    }
+
+    .panel-cat-badge {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: .15rem .5rem;
+      border-radius: 999px;
+      color: #fff;
+      margin-bottom: .5rem;
+    }
+
+    .panel-meta {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .panel-view-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem 1rem;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 7px;
+      font-size: .82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity .15s;
+      margin-bottom: 1.25rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .panel-view-btn:hover { opacity: .85; text-decoration: none; }
+    .panel-view-btn.disabled {
+      background: var(--mid);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .panel-section-title {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .5rem;
+    }
+
+    .connections-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+
+    .conn-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .8rem;
+      padding: .3rem .45rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .12s;
+      color: var(--text);
+    }
+
+    .conn-item:hover { background: var(--mid); }
+
+    .conn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .conn-dir {
+      font-size: .6rem;
+      color: var(--muted);
+      background: var(--mid);
+      padding: .1rem .3rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    /* ── Graph edges ─────────────────────────────────────────── */
+    .graph-edge {
+      stroke: var(--border);
+      stroke-opacity: .55;
+      stroke-width: 1.5;
+      fill: none;
+      transition: stroke-opacity .15s, stroke-width .15s;
+    }
+
+    .graph-edge.highlighted {
+      stroke: var(--blue-l);
+      stroke-opacity: .85;
+      stroke-width: 2;
+    }
+
+    .graph-edge.dimmed { stroke-opacity: .08; }
+
+    .graph-node circle {
+      stroke-width: 2;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+
+    .graph-node circle.dimmed { opacity: .12; }
+
+    .graph-node text {
+      font-size: 10px;
+      fill: var(--muted);
+      pointer-events: none;
+      user-select: none;
+      transition: opacity .15s;
+    }
+
+    .graph-node text.dimmed { opacity: .08; }
+    .graph-node text.label-bright { fill: var(--heading); }
+
+    /* ── Repel slider ────────────────────────────────────────── */
+    .slider-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .45rem .75rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: .68rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    #repel-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    #repel-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--blue);
+      cursor: pointer;
+      border: 2px solid var(--surface);
+      box-shadow: 0 0 0 1px var(--blue);
+    }
+
+    #repel-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--blue);
+      cursor: pointer;
+      border: 2px solid var(--surface);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ─────────────────────────────────────────────────── -->
+<nav>
+  <a href="../../index.html" style="color:var(--white);font-weight:700;font-size:1rem;letter-spacing:.03em;white-space:nowrap;flex-shrink:0;text-decoration:none;">Joshua Osborne</a>
+  <div class="nav-actions" style="margin-left:auto;">
+    <a href="../index.html" style="font-size:.8rem;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:.3rem;margin-right:.75rem;transition:color .15s;text-decoration:none;"
+       onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.55)'">
+      ← Notes
+    </a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle colour scheme" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ── Main layout ───────────────────────────────────────────── -->
+<div class="graph-shell">
+
+  <!-- Graph canvas -->
+  <div id="graph-canvas">
+    <svg id="graph-svg"></svg>
+
+    <!-- Toolbar -->
+    <div class="graph-toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="node-search" type="text" placeholder="Search topics…" autocomplete="off" />
+        <button id="search-clear" style="display:none;background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:.9rem;line-height:1;" title="Clear">✕</button>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+        <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
+        <button class="zoom-btn" id="zoom-reset" title="Reset view" style="font-size:.75rem;width:auto;padding:0 .5rem;letter-spacing:.02em;">Fit</button>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-label">
+          <span>Repel</span>
+          <span id="repel-val">400</span>
+        </div>
+        <input type="range" id="repel-slider" min="50" max="1000" value="400" step="10" />
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="graph-legend" id="graph-legend"></div>
+
+    <!-- Stats -->
+    <div class="graph-stats" id="graph-stats"></div>
+  </div>
+
+  <!-- Info panel -->
+  <div class="info-panel" id="info-panel">
+    <div class="info-panel-inner" id="panel-content"></div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="graph-tooltip"></div>
+
+<script>
+/* ── Data ──────────────────────────────────────────────────── */
+const nodes = GRAPH_DATA.nodes.map(d => Object.assign({}, d));
+const links = GRAPH_DATA.links.map(d => Object.assign({}, d));
+
+/* ── Category colours ───────────────────────────────────────── */
+const CAT_COLOR = {
+  'hypothesis testing':     '#f472b6',
+  'machine learning':       '#4ade80',
+  'probability theory':     '#60a5fa',
+  'descriptive statistics': '#fb923c',
+  'time series':            '#a78bfa',
+  'computational methods':  '#22d3ee',
+  'root':                   '#94a3b8',
+};
+
+const CAT_LABEL = {
+  'hypothesis testing':     'Hypothesis Testing',
+  'machine learning':       'Machine Learning',
+  'probability theory':     'Probability Theory',
+  'descriptive statistics': 'Descriptive Statistics',
+  'time series':            'Time Series',
+  'computational methods':  'Computational Methods',
+  'root':                   'Other',
+};
+
+function nodeColor(d) { return CAT_COLOR[d.category] || '#94a3b8'; }
+
+/* ── Degree map ─────────────────────────────────────────────── */
+const degree = {};
+links.forEach(l => {
+  degree[l.source] = (degree[l.source] || 0) + 1;
+  degree[l.target] = (degree[l.target] || 0) + 1;
+});
+
+function nodeRadius(d) { return 5 + Math.sqrt(degree[d.id] || 0) * 2.2; }
+
+/* ── Adjacency ──────────────────────────────────────────────── */
+const adjacency = {};
+nodes.forEach(n => { adjacency[n.id] = { out: new Set(), inb: new Set() }; });
+links.forEach(l => {
+  const src = typeof l.source === 'object' ? l.source.id : l.source;
+  const tgt = typeof l.target === 'object' ? l.target.id : l.target;
+  adjacency[src].out.add(tgt);
+  adjacency[tgt].inb.add(src);
+});
+
+const nodeById = {};
+nodes.forEach(n => { nodeById[n.id] = n; });
+
+/* ── SVG setup ──────────────────────────────────────────────── */
+const svg    = d3.select('#graph-svg');
+const canvas = document.getElementById('graph-canvas');
+const W = () => canvas.clientWidth;
+const H = () => canvas.clientHeight;
+const g = svg.append('g');
+
+const defs = svg.append('defs');
+defs.append('marker')
+    .attr('id', 'arrow').attr('viewBox', '0 -4 8 8')
+    .attr('refX', 8).attr('refY', 0)
+    .attr('markerWidth', 6).attr('markerHeight', 6)
+    .attr('orient', 'auto')
+  .append('path').attr('d', 'M0,-4L8,0L0,4').attr('fill', '#2d3f55');
+
+defs.append('marker')
+    .attr('id', 'arrow-hl').attr('viewBox', '0 -4 8 8')
+    .attr('refX', 8).attr('refY', 0)
+    .attr('markerWidth', 6).attr('markerHeight', 6)
+    .attr('orient', 'auto')
+  .append('path').attr('d', 'M0,-4L8,0L0,4').attr('fill', '#60a5fa');
+
+/* ── Zoom ───────────────────────────────────────────────────── */
+const zoom = d3.zoom().scaleExtent([0.15, 4])
+  .on('zoom', e => g.attr('transform', e.transform));
+svg.call(zoom).on('dblclick.zoom', null);
+
+function fitView() {
+  const b = g.node().getBBox();
+  if (!b.width || !b.height) return;
+  const pad = 60, w = W(), h = H();
+  const scale = Math.min((w - pad*2) / b.width, (h - pad*2) / b.height, 1.2);
+  svg.transition().duration(600).call(
+    zoom.transform,
+    d3.zoomIdentity.translate(w/2, h/2).scale(scale).translate(-(b.x + b.width/2), -(b.y + b.height/2))
+  );
+}
+
+document.getElementById('zoom-in').addEventListener('click',    () => svg.transition().duration(250).call(zoom.scaleBy, 1.35));
+document.getElementById('zoom-out').addEventListener('click',   () => svg.transition().duration(250).call(zoom.scaleBy, 0.75));
+document.getElementById('zoom-reset').addEventListener('click', fitView);
+
+/* ── Spread nodes before simulation so center is meaningful ─── */
+nodes.forEach(n => {
+  n.x = (Math.random() - 0.5) * 600;
+  n.y = (Math.random() - 0.5) * 600;
+});
+
+/* ── Force simulation ───────────────────────────────────────── */
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(links).id(d => d.id)
+    .distance(d => {
+      const sc = nodeById[typeof d.source === 'object' ? d.source.id : d.source]?.category;
+      const tc = nodeById[typeof d.target === 'object' ? d.target.id : d.target]?.category;
+      return sc === tc ? 120 : 200;
+    }).strength(0.3))
+  .force('charge',  d3.forceManyBody().strength(d => -400 - nodeRadius(d) * 18))
+  .force('center',  d3.forceCenter(0, 0))
+  .force('collide', d3.forceCollide().radius(d => nodeRadius(d) + 20))
+  .force('x', d3.forceX(0).strength(0.03))
+  .force('y', d3.forceY(0).strength(0.03));
+
+/* ── Edges ──────────────────────────────────────────────────── */
+const linkSel = g.append('g').selectAll('line').data(links).join('line')
+  .attr('class', 'graph-edge')
+  .attr('marker-end', 'url(#arrow)');
+
+/* ── Nodes ──────────────────────────────────────────────────── */
+const nodeSel = g.append('g').selectAll('g').data(nodes).join('g')
+  .attr('class', 'graph-node')
+  .call(drag(simulation));
+
+nodeSel.append('circle')
+  .attr('r', nodeRadius)
+  .attr('fill', nodeColor)
+  .attr('stroke', d => d3.color(nodeColor(d)).darker(0.6))
+  .attr('stroke-width', 1.5);
+
+nodeSel.append('text')
+  .text(d => d.label)
+  .attr('x', d => nodeRadius(d) + 3)
+  .attr('y', '0.35em')
+  .attr('class', d => (degree[d.id] || 0) >= 4 ? 'label-bright' : '');
+
+/* ── Tick ───────────────────────────────────────────────────── */
+simulation.on('tick', () => {
+  linkSel
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => {
+      const r = nodeRadius(d.target) + 6;
+      const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+      const len = Math.hypot(dx, dy) || 1;
+      return d.target.x - dx/len * r;
+    })
+    .attr('y2', d => {
+      const r = nodeRadius(d.target) + 6;
+      const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+      const len = Math.hypot(dx, dy) || 1;
+      return d.target.y - dy/len * r;
+    });
+  nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+simulation.on('end', fitView);
+
+/* call fitView once the layout has warmed up even if 'end' fires late */
+setTimeout(fitView, 1200);
+
+/* ── Repel slider ───────────────────────────────────────────── */
+const repelSlider = document.getElementById('repel-slider');
+const repelVal    = document.getElementById('repel-val');
+
+repelSlider.addEventListener('input', () => {
+  const v = +repelSlider.value;
+  repelVal.textContent = v;
+  simulation.force('charge').strength(d => -v - nodeRadius(d) * 18);
+  simulation.alpha(0.4).restart();
+});
+
+/* ── Drag ───────────────────────────────────────────────────── */
+function drag(sim) {
+  return d3.drag()
+    .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
+    .on('end',   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; });
+}
+
+/* ── Tooltip ────────────────────────────────────────────────── */
+const tooltip = document.getElementById('graph-tooltip');
+
+nodeSel
+  .on('mouseenter', (e, d) => {
+    tooltip.innerHTML = `<div>${d.label}</div><div class="tt-cat">${CAT_LABEL[d.category] || d.category} · ${degree[d.id] || 0} links</div>`;
+    tooltip.style.display = 'block';
+    moveTooltip(e);
+  })
+  .on('mousemove', moveTooltip)
+  .on('mouseleave', () => { tooltip.style.display = 'none'; });
+
+function moveTooltip(e) {
+  const GAP = 12;
+  let x = e.clientX + GAP, y = e.clientY + GAP;
+  if (x + 220 > window.innerWidth)  x = e.clientX - 220 - GAP;
+  if (y + 60  > window.innerHeight) y = e.clientY - 60  - GAP;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+
+/* ── Selection ──────────────────────────────────────────────── */
+let selectedId = null;
+
+nodeSel.on('click', (e, d) => {
+  e.stopPropagation();
+  tooltip.style.display = 'none';
+  selectedId === d.id ? deselectNode() : selectNode(d);
+});
+
+svg.on('click', deselectNode);
+
+function selectNode(d) {
+  selectedId = d.id;
+
+  const connected = new Set([d.id]);
+  adjacency[d.id].out.forEach(id => connected.add(id));
+  adjacency[d.id].inb.forEach(id => connected.add(id));
+
+  const connEdges = new Set();
+  links.forEach((l, i) => {
+    const src = typeof l.source === 'object' ? l.source.id : l.source;
+    const tgt = typeof l.target === 'object' ? l.target.id : l.target;
+    if (src === d.id || tgt === d.id) connEdges.add(i);
+  });
+
+  linkSel
+    .classed('highlighted', (l, i) => connEdges.has(i))
+    .classed('dimmed',      (l, i) => !connEdges.has(i))
+    .attr('marker-end', (l, i) => connEdges.has(i) ? 'url(#arrow-hl)' : 'url(#arrow)');
+
+  nodeSel.select('circle').classed('dimmed', n => !connected.has(n.id));
+  nodeSel.select('text').classed('dimmed',   n => !connected.has(n.id));
+
+  openPanel(d);
+}
+
+function deselectNode() {
+  selectedId = null;
+  linkSel.classed('highlighted', false).classed('dimmed', false).attr('marker-end', 'url(#arrow)');
+  nodeSel.select('circle').classed('dimmed', false);
+  nodeSel.select('text').classed('dimmed', false);
+  closePanel();
+}
+
+/* ── Panel ──────────────────────────────────────────────────── */
+const panel       = document.getElementById('info-panel');
+const panelContent = document.getElementById('panel-content');
+
+function openPanel(d) {
+  const outNodes = [...adjacency[d.id].out].map(id => nodeById[id]).filter(Boolean);
+  const inNodes  = [...adjacency[d.id].inb].map(id => nodeById[id]).filter(Boolean);
+  const allConn  = [...new Map([...outNodes, ...inNodes].map(n => [n.id, n])).values()]
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const viewBtn = d.htmlPath
+    ? `<a href="${d.htmlPath}" target="_blank" rel="noopener" class="panel-view-btn">
+         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+         View Note
+       </a>`
+    : `<span class="panel-view-btn disabled">Not yet published</span>`;
+
+  const connItems = allConn.map(n => {
+    const isOut = adjacency[d.id].out.has(n.id);
+    const isIn  = adjacency[d.id].inb.has(n.id);
+    const dir   = isOut && isIn ? '⇄' : isOut ? '→' : '←';
+    return `<li class="conn-item" data-id="${n.id}">
+      <span class="conn-dot" style="background:${nodeColor(n)}"></span>
+      <span>${n.label}</span>
+      <span class="conn-dir">${dir}</span>
+    </li>`;
+  }).join('');
+
+  panelContent.innerHTML = `
+    <div class="panel-header">
+      <button class="panel-close" id="panel-close" title="Close">✕</button>
+      <div class="panel-title">${d.label}</div>
+      <span class="panel-cat-badge" style="background:${nodeColor(d)}">${CAT_LABEL[d.category] || d.category}</span>
+    </div>
+    ${viewBtn}
+    <div class="panel-meta">${degree[d.id] || 0} connection${(degree[d.id] || 0) !== 1 ? 's' : ''}</div>
+    ${allConn.length
+      ? `<div class="panel-section-title">Connected Topics</div><ul class="connections-list">${connItems}</ul>`
+      : '<div style="font-size:.8rem;color:var(--muted);">No connections yet.</div>'}
+  `;
+
+  panel.classList.add('open');
+  document.getElementById('panel-close').addEventListener('click', deselectNode);
+  panelContent.querySelectorAll('.conn-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const n = nodeById[el.dataset.id];
+      if (n) selectNode(n);
+    });
+  });
+}
+
+function closePanel() {
+  panel.classList.remove('open');
+  panelContent.innerHTML = '';
+}
+
+/* ── Search ─────────────────────────────────────────────────── */
+const searchInput = document.getElementById('node-search');
+const searchClear = document.getElementById('search-clear');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  searchClear.style.display = q ? 'block' : 'none';
+  if (!q) {
+    nodeSel.select('circle').classed('dimmed', false);
+    nodeSel.select('text').classed('dimmed', false);
+    linkSel.classed('dimmed', false);
+    return;
+  }
+  deselectNode();
+  const matches = new Set(nodes.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id));
+  nodeSel.select('circle').classed('dimmed', n => !matches.has(n.id));
+  nodeSel.select('text').classed('dimmed',   n => !matches.has(n.id));
+  linkSel.classed('dimmed', l => {
+    const src = typeof l.source === 'object' ? l.source.id : l.source;
+    const tgt = typeof l.target === 'object' ? l.target.id : l.target;
+    return !matches.has(src) && !matches.has(tgt);
+  });
+});
+
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  nodeSel.select('circle').classed('dimmed', false);
+  nodeSel.select('text').classed('dimmed', false);
+  linkSel.classed('dimmed', false);
+});
+
+/* ── Legend ─────────────────────────────────────────────────── */
+const usedCats = [...new Set(nodes.map(n => n.category))].sort();
+const legendEl = document.getElementById('graph-legend');
+legendEl.innerHTML = `<div class="legend-title">Category</div>` +
+  usedCats.map(cat => `
+    <div class="legend-item" data-cat="${cat}">
+      <span class="legend-dot" style="background:${CAT_COLOR[cat] || '#94a3b8'}"></span>
+      ${CAT_LABEL[cat] || cat}
+    </div>`).join('');
+
+const dimmedCats = new Set();
+legendEl.querySelectorAll('.legend-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const cat = item.dataset.cat;
+    if (dimmedCats.has(cat)) { dimmedCats.delete(cat); item.classList.remove('dimmed'); }
+    else                     { dimmedCats.add(cat);    item.classList.add('dimmed');    }
+    nodeSel.select('circle').classed('dimmed', n => dimmedCats.has(n.category));
+    nodeSel.select('text').classed('dimmed',   n => dimmedCats.has(n.category));
+    linkSel.classed('dimmed', l => {
+      const src = typeof l.source === 'object' ? l.source.id : l.source;
+      const tgt = typeof l.target === 'object' ? l.target.id : l.target;
+      return dimmedCats.has(nodeById[src]?.category) && dimmedCats.has(nodeById[tgt]?.category);
+    });
+  });
+});
+
+/* ── Stats ──────────────────────────────────────────────────── */
+document.getElementById('graph-stats').textContent =
+  `${nodes.length} topics · ${links.length} connections`;
+
+/* ── Theme toggle ───────────────────────────────────────────── */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const isLight = document.documentElement.classList.toggle('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  applyTheme();
+});
+
+function applyTheme() {
+  const isLight = document.documentElement.classList.contains('light-mode');
+  svg.select('defs marker#arrow path').attr('fill', isLight ? '#c9d5e4' : '#2d3f55');
+  svg.select('defs marker#arrow-hl path').attr('fill', '#3b82f6');
+}
+
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+applyTheme();
+</script>
+
+</body>
+</html>

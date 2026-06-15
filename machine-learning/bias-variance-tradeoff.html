@@ -309,8 +309,7 @@ squared, variance, and irreducible error.</p>
     </ul>
   </div>
   <div class="note-body">
-    <p>recall from
-    <a href="../machine-learning/what-is-machine-learning.html">What is
+    <p>recall from <a href="../what-is-machine-learning.html">What is
     machine learning</a> that no model we fit will ever produce a
     perfect prediction. The general form of our prediction is <span
     class="math inline">\(Y = f(X) + \epsilon\)</span>, where <span
@@ -390,12 +389,20 @@ squared, variance, and irreducible error.</p>
     class="math inline">\(\mathbb{E}[X]\)</span> please refer to the
     <span class="wikilink" title="See: Expectation">Expectation</span>
     notes. Before we begin: a key part of this derivation relates to
-    <span class="math inline">\(\epsilon\)</span>. That is, <span
-    class="math inline">\(\epsilon\)</span> represents the aggregate of
-    many small, independent unmodelled influences, and by the <span
-    class="wikilink" title="See: central limit theorem">central limit
-    theorem</span> that sum converges to a normal distribution such that
-    <span class="math inline">\(\mathbb{E}[\epsilon]=0\)</span></p>
+    <span class="math inline">\(\epsilon\)</span>. Two things must be
+    true about it. First, <span class="math inline">\(\epsilon\)</span>
+    represents the aggregate of many small, independent unmodelled
+    influences; by the <span class="wikilink"
+    title="See: central limit theorem">central limit theorem</span> that
+    sum converges to a normal distribution, giving <span
+    class="math inline">\(\epsilon\)</span> its bell-curve shape.
+    Second, we assume each individual influence has zero mean, meaning
+    the noise has no systematic direction and is equally likely to push
+    positive or negative. Because the mean of a sum equals the sum of
+    the means, this gives <span
+    class="math inline">\(\mathbb{E}[\epsilon] = 0\)</span>. Together
+    these two premises give <span class="math inline">\(\epsilon \sim
+    \mathcal{N}(0, \sigma^2_\epsilon)\)</span>.</p>
     <p><strong>Step 1: start with <span class="wikilink"
     title="See: Mean Squared Error">MSE</span> and substitute</strong>
     <span class="math inline">\(Y = f(x) + \epsilon\)</span></p>
