@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-Nearest Neighbors — Statistics Notes | Joshua Osborne</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1b2a'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='14' fill='%232563eb'>JO</text></svg>" />
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(t==='light'||(t==null&&window.matchMedia('(prefers-color-scheme:light)').matches)){
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../../style.css" />
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  
+  <style>
+    /* Code blocks */
+    .note-body pre {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body pre { background: #f6f8fa; border-color: #d0d7de; }
+    .note-body code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .note-body p code, .note-body li code {
+      background: var(--mid);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .85em;
+    }
+    /* Override pandoc highlight background to match our pre block */
+    .note-body pre.sourceCode { background: inherit; border: none; padding: 0; margin: 0; }
+    .note-body div.sourceCode {
+      background: #1a2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+    }
+    :root.light-mode .note-body div.sourceCode { background: #f6f8fa; border-color: #d0d7de; }
+
+    /* Nav: minimal standalone */
+    nav a.logo { color: var(--white) !important; }
+    nav a.logo:hover { opacity: .85; text-decoration: none; }
+    .nav-back {
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--white); text-decoration: none; }
+
+    /* Hero */
+    .notes-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .notes-hero .section-label { display: inline-block; margin-bottom: .9rem; }
+    .notes-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800; color: var(--white); line-height: 1.15; margin-bottom: .5rem;
+    }
+    .notes-hero-sub {
+      font-size: 1rem; color: rgba(255,255,255,.65);
+      max-width: 600px; margin: 0 auto; line-height: 1.6;
+    }
+    .notes-hero-author {
+      font-size: .85rem; color: rgba(255,255,255,.45);
+      margin-top: .5rem;
+    }
+
+    /* Layout */
+    .note-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 2.5rem;
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .note-layout { grid-template-columns: 1fr; padding: 0 1rem; }
+      .note-toc { display: none !important; }
+    }
+
+    /* TOC — div, not nav, to avoid style.css nav rules */
+    .note-toc {
+      position: sticky;
+      top: 72px;
+      align-self: start;
+      display: block;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1rem;
+      box-shadow: var(--shadow);
+      width: 220px;
+    }
+    .note-toc-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .note-toc ul { list-style: none; padding: 0; margin: 0; }
+    .note-toc li { margin-bottom: .2rem; }
+    .note-toc a {
+      display: block; font-size: .8rem; color: var(--muted);
+      padding: .3rem .5rem; border-radius: 5px; line-height: 1.4;
+      transition: background .12s, color .12s;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .note-toc a:hover { color: var(--heading); background: var(--mid); text-decoration: none; }
+    .note-toc a.active { color: var(--blue-l); background: var(--mid); }
+    /* hide nested TOC levels */
+    .note-toc ul ul { display: none; }
+
+    /* Note body */
+    .note-body { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* --section-divs wraps each h2 + content in <section class="level2"> */
+    .note-body section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 640px) { .note-body section { padding: 1.25rem 1.1rem; } }
+
+    .note-body h2 {
+      font-size: 1.2rem; font-weight: 800; color: var(--heading);
+      padding-bottom: .65rem; margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-body h3 {
+      font-size: .85rem; font-weight: 700; color: var(--blue-l);
+      margin: 1.4rem 0 .6rem;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .note-body p {
+      color: var(--text); font-size: .925rem; line-height: 1.85; margin-bottom: .9rem;
+    }
+    .note-body p:last-child { margin-bottom: 0; }
+    .note-body ul, .note-body ol {
+      color: var(--text); font-size: .925rem;
+      padding-left: 1.5rem; line-height: 1.8; margin-bottom: .9rem;
+    }
+    .note-body li { margin-bottom: .35rem; }
+    .note-body strong { color: var(--heading); }
+
+    /* Tables */
+    .note-body table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: 1.25rem 0; }
+    .note-body thead tr { background: var(--mid); }
+    .note-body th {
+      text-align: left; padding: .65rem 1rem; color: var(--heading);
+      font-weight: 700; font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .note-body td {
+      padding: .6rem 1rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55;
+    }
+    .note-body tbody tr:last-child td { border-bottom: none; }
+    .note-body tbody tr:hover { background: var(--mid); }
+    .note-body table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+    /* Math — pandoc outputs .math.display and .math.inline */
+    .math.display {
+      display: block; text-align: center;
+      background: var(--mid); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.5rem;
+      margin: 1.25rem 0; overflow-x: auto;
+    }
+
+    /* NOTE callout */
+    p.note-callout {
+      display: flex; gap: .75rem;
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius);
+      padding: .9rem 1.1rem; line-height: 1.7;
+    }
+
+    /* Wikilinks */
+    .wikilink {
+      color: var(--muted); font-style: italic;
+      border-bottom: 1px dotted var(--muted); cursor: help;
+    }
+
+    /* Images */
+    .note-body img {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .note-body figure { margin: 1.5rem 0; text-align: center; }
+    .note-body figcaption { font-size: .8rem; color: var(--muted); font-style: italic; margin-top: .4rem; }
+
+    /* Videos (converted from GIF) */
+    .note-body .note-video {
+      display: block; max-width: 100%; margin: 1.25rem auto;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Back to top */
+    #back-to-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+      background: var(--blue); color: #fff; border: none; border-radius: 50%;
+      width: 44px; height: 44px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s, background .15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { background: var(--blue-l); }
+
+    /* Prev / Next navigation */
+    .note-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 2rem;
+      gap: 1rem;
+    }
+    .note-nav-link {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .75rem 1.25rem;
+      color: var(--text); font-size: .875rem; font-weight: 500;
+      transition: border-color .15s, background .15s, color .15s;
+      text-decoration: none; max-width: 46%;
+    }
+    .note-nav-link:hover {
+      border-color: var(--blue); color: var(--blue-l); text-decoration: none;
+      background: var(--mid);
+    }
+    .note-nav-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); display: block;
+    }
+    .note-nav-title { display: block; }
+    .note-nav-prev { text-align: left; }
+    .note-nav-next { text-align: right; margin-left: auto; }
+    @media (max-width: 600px) {
+      .note-nav { flex-direction: column; }
+      .note-nav-link { max-width: 100%; width: 100%; }
+      .note-nav-next { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="../../../index.html">Joshua Osborne</a>
+  <div class="nav-actions">
+    <a class="nav-back" href="../../index.html">&#8592; Notes</a>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" title="Toggle colour scheme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="notes-hero">
+  <p class="section-label">Statistics Notes</p>
+  <h1>K-Nearest Neighbors</h1>
+  <p class="notes-hero-sub">Non-parametric classification and regression
+by majority vote among the k closest training points.</p>
+  <p class="notes-hero-author">by Joshua Osborne</p>
+</div>
+
+<div class="note-layout">
+  <div class="note-toc">
+    <p class="note-toc-label">Contents</p>
+    <ul>
+    <li><a href="#motivation" id="toc-motivation">Motivation</a></li>
+    <li><a href="#formal-definition" id="toc-formal-definition">Formal
+    Definition</a></li>
+    <li><a href="#notation" id="toc-notation">Notation</a></li>
+    <li><a href="#key-equations" id="toc-key-equations">Key
+    Equations</a></li>
+    <li><a href="#worked-example" id="toc-worked-example">Worked
+    Example</a></li>
+    <li><a href="#intuition-visual" id="toc-intuition-visual">Intuition
+    / Visual</a></li>
+    <li><a href="#common-misconceptions"
+    id="toc-common-misconceptions">Common Misconceptions</a></li>
+    <li><a href="#connections" id="toc-connections">Connections</a></li>
+    <li><a href="#references" id="toc-references">References</a></li>
+    </ul>
+  </div>
+  <div class="note-body">
+    <p>K-Nearest Neighbors (KNN) predicts the output for a new point by
+    finding the <span class="math inline">\(k\)</span> closest training
+    examples under some distance metric (<span class="wikilink"
+    title="See: euclidean">euclidean</span>,<span class="wikilink"
+    title="See: malhalinobis">malhalinobis</span>,<span class="wikilink"
+    title="See: manhattan">manhattan</span>, etc.). Can be used in both
+    regression and classification problems.</p>
+    <section id="motivation" class="level2">
+    <h2>Motivation</h2>
+    <p>Most algorithms fit a parametric model during training and
+    discard the raw data afterward. KNN, however, is a non-parametric
+    method which keeps every training point, and at prediction time
+    looks up the neighborhood around the queried point.</p>
+    <p>A
+    <a href="../../machine-learning/supervised/linear-regression-models/simple-linear-regression.html">linear
+    classifier</a> forces a straight boundary; KNN adapts freely because
+    each prediction is based only on whichever training points are
+    locally relevant. The trade-off is that prediction requires
+    searching through all training examples, and performance degrades in
+    high-dimensional spaces (see <span class="wikilink"
+    title="See: curse of dimensionality">curse of
+    dimensionality</span>). For small-to-moderate datasets with modest
+    dimensions, however, KNN is a powerful and assumption-free
+    baseline.</p>
+    </section>
+    <section id="formal-definition" class="level2">
+    <h2>Formal Definition</h2>
+    <p>Let <span class="math inline">\(\mathcal{D} = \{(x_1, y_1),
+    \ldots, (x_n, y_n)\}\)</span> be the training dataset where <span
+    class="math inline">\(x_i \in \mathbb{R}^p\)</span> (This is read as
+    <span class="math inline">\(x\)</span> is a vector of real numbers
+    of size <span class="math inline">\(p\)</span>) and <span
+    class="math inline">\(y_i\)</span> is either a class label
+    (classification) or a real value (regression).</p>
+    <p>Given a distance function <span class="math inline">\(d(\cdot,
+    \cdot)\)</span> and a positive integer <span
+    class="math inline">\(k\)</span>, the <strong><span
+    class="math inline">\(k\)</span>-neighborhood</strong> of a query
+    point <span class="math inline">\(x\)</span> is: <span
+    class="math display">\[\mathcal{N}_k(x) = \text{the } k \text{
+    indices } i \text{ with smallest } d(x,\, x_i)\]</span></p>
+    <p><strong>Classification</strong>: predict the <span
+    class="wikilink" title="See: mode">mode</span> class among neighbors
+    (this means pick the label that shows up the most): <span
+    class="math display">\[\hat{y}(x) = \operatorname{mode}\{ y_i : i
+    \in \mathcal{N}_k(x) \}\]</span></p>
+    <p><strong>Regression</strong>: predict the <span class="wikilink"
+    title="See: mean">mean</span> response among neighbors: <span
+    class="math display">\[\hat{y}(x) = \frac{1}{k} \sum_{i \in
+    \mathcal{N}_k(x)} y_i\]</span></p>
+    <p>KNN is <strong>non-parametric</strong>: there are no coefficients
+    estimated during training. The training set itself serves as the
+    model, which is why KNN is called a <strong>lazy
+    learner</strong>.</p>
+    </section>
+    <section id="notation" class="level2">
+    <h2>Notation</h2>
+    <table>
+    <colgroup>
+    <col style="width: 34%" />
+    <col style="width: 26%" />
+    <col style="width: 39%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th>Symbol</th>
+    <th>Type</th>
+    <th>Meaning</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td><span class="math inline">\(\mathcal{D}\)</span></td>
+    <td>set</td>
+    <td>full training dataset <span
+    class="math inline">\(\{(x_1,y_1),\ldots,(x_n,y_n)\}\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(n\)</span></td>
+    <td>integer</td>
+    <td>number of training examples</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(p\)</span></td>
+    <td>integer</td>
+    <td>number of features (dimension of each point)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(i\)</span></td>
+    <td>integer</td>
+    <td>index of a training example, <span class="math inline">\(i =
+    1,\ldots,n\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(j\)</span></td>
+    <td>integer</td>
+    <td>index of a feature coordinate, <span class="math inline">\(j =
+    1,\ldots,p\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(x_i \in \mathbb{R}^p\)</span></td>
+    <td>vector</td>
+    <td><span class="math inline">\(i\)</span>-th training feature
+    vector</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(x_j\)</span></td>
+    <td>scalar</td>
+    <td><span class="math inline">\(j\)</span>-th coordinate of a
+    feature vector <span class="math inline">\(x\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(y_i\)</span></td>
+    <td>scalar or label</td>
+    <td>target for training example <span
+    class="math inline">\(i\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(x\)</span></td>
+    <td>vector</td>
+    <td>query point to be classified or regressed</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(x&#39;\)</span></td>
+    <td>vector</td>
+    <td>nearest-neighbor training point to <span
+    class="math inline">\(x\)</span> (used in Cover-Hart
+    derivation)</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(y&#39;\)</span></td>
+    <td>scalar or label</td>
+    <td>label of the nearest-neighbor point <span
+    class="math inline">\(x&#39;\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(k\)</span></td>
+    <td>integer</td>
+    <td>number of neighbors to consult</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(d(x, x&#39;)\)</span></td>
+    <td>scalar</td>
+    <td>distance between two points under the chosen metric</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(r\)</span></td>
+    <td>scalar</td>
+    <td>order parameter in the Minkowski metric (<span
+    class="math inline">\(r \geq 1\)</span>); unrelated to <span
+    class="math inline">\(r(x)\)</span> below</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mathcal{N}_k(x)\)</span></td>
+    <td>index set</td>
+    <td>the indices of the <span class="math inline">\(k\)</span>
+    nearest neighbors of <span class="math inline">\(x\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\hat{y}(x)\)</span></td>
+    <td>scalar or label</td>
+    <td>predicted output at <span class="math inline">\(x\)</span></td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(w_i\)</span></td>
+    <td>scalar</td>
+    <td>weight assigned to neighbor <span
+    class="math inline">\(i\)</span> in weighted KNN</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\mathbb{E}[\cdot]\)</span></td>
+    <td>operator</td>
+    <td>expectation (average over the data distribution)</td>
+    </tr>
+    </tbody>
+    </table>
+    </section>
+    <section id="key-equations" class="level2">
+    <h2>Key Equations</h2>
+    <section id="distance-metrics" class="level3">
+    <h3>1. Distance Metrics</h3>
+    <p>The default choice is <strong>Euclidean distance</strong> (<span
+    class="math inline">\(\ell_2\)</span> norm): <span
+    class="math display">\[d_2(x,\, x&#39;) = \sqrt{\sum_{j=1}^{p}(x_j -
+    x&#39;_j)^2}\]</span></p>
+    <p>The <strong>Minkowski family</strong> generalizes this with a
+    single parameter <span class="math inline">\(r \geq 1\)</span>:
+    <span class="math display">\[d_r(x,\, x&#39;) = \left(
+    \sum_{j=1}^{p} |x_j - x&#39;_j|^r \right)^{1/r}\]</span></p>
+    <table>
+    <colgroup>
+    <col style="width: 22%" />
+    <col style="width: 27%" />
+    <col style="width: 50%" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th><span class="math inline">\(r\)</span></th>
+    <th>Name</th>
+    <th>Character</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>Manhattan (<span class="math inline">\(\ell_1\)</span>)</td>
+    <td>Sum of absolute coordinate differences; robust to outliers</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>Euclidean (<span class="math inline">\(\ell_2\)</span>)</td>
+    <td>Standard geometric distance; most common default</td>
+    </tr>
+    <tr>
+    <td><span class="math inline">\(\infty\)</span></td>
+    <td>Chebyshev (<span
+    class="math inline">\(\ell_\infty\)</span>)</td>
+    <td>Maximum coordinate difference; <span
+    class="math inline">\(\lim_{r\to\infty} d_r = \max_j\lvert x_j -
+    x&#39;_j\rvert\)</span></td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Feature scaling matters.</strong> If feature <span
+    class="math inline">\(x_1\)</span> ranges over <span
+    class="math inline">\([0, 1000]\)</span> and <span
+    class="math inline">\(x_2\)</span> over <span
+    class="math inline">\([0, 1]\)</span>, Euclidean distance is
+    dominated entirely by <span class="math inline">\(x_1\)</span>.
+    Therefore, <span class="wikilink"
+    title="See: standardization">standardization</span> is an important
+    step before applying the KNN, this means we shift each feature to
+    zero mean and unit variance so that each feature has equal
+    weighting.</p>
+    </section>
+    <section id="classification-decision-rule" class="level3">
+    <h3>2. Classification Decision Rule</h3>
+    <p>Collect the labels of the <span class="math inline">\(k\)</span>
+    nearest neighbors and take a majority vote: <span
+    class="math display">\[\hat{y}(x) = \operatorname{mode}\{ y_i : i
+    \in \mathcal{N}_k(x) \}\]</span></p>
+    <p>In the case of a tie, common resolutions are to reduce <span
+    class="math inline">\(k\)</span> by one or to pick the class whose
+    nearest member is closest.</p>
+    </section>
+    <section id="regression-prediction" class="level3">
+    <h3>3. Regression Prediction</h3>
+    <p>Replace the vote with an arithmetic mean of neighbor responses:
+    <span class="math display">\[\hat{y}(x) = \frac{1}{k} \sum_{i \in
+    \mathcal{N}_k(x)} y_i\]</span></p>
+    </section>
+    <section id="inverse-distance-weighting" class="level3">
+    <h3>4. Inverse-Distance Weighting</h3>
+    <p>This is not a separate algorithm. It is the same KNN algorithm
+    with one change: instead of every neighbor getting an equal vote, a
+    neighbor’s vote is scaled by how close it is to the query point.</p>
+    <p><strong>Why the standard version feels arbitrary.</strong> In
+    plain KNN, all <span class="math inline">\(k\)</span> neighbors
+    count identically whether a neighbor is 0.1 units away or 50 units
+    away. That is a strange design choice. A neighbor that is nearly on
+    top of the query point should be much more informative.</p>
+    <p><strong>The fix.</strong> Assign each neighbor a weight equal to
+    the reciprocal of its distance to the query: <span
+    class="math display">\[w_i = \frac{1}{d(x,\, x_i)}\]</span></p>
+    <p>Then replace the plain mean (regression) or majority vote
+    (classification) with a weighted version: <span
+    class="math display">\[\hat{y}(x) = \frac{\displaystyle\sum_{i \in
+    \mathcal{N}_k(x)} w_i\, y_i}{\displaystyle\sum_{i \in
+    \mathcal{N}_k(x)} w_i}\]</span></p>
+    <p>The denominator normalizes so the weights sum to 1, keeping <span
+    class="math inline">\(\hat{y}\)</span> in the same range as the
+    <span class="math inline">\(y_i\)</span>.</p>
+    <p><strong>Edge case.</strong> If the query point exactly coincides
+    with a training point, <span class="math inline">\(d = 0\)</span>
+    and <span class="math inline">\(w_i = 1/0\)</span> is undefined. The
+    standard fix is to return that training point’s label directly
+    (distance 0 means perfect match).</p>
+    </section>
+    <section id="effect-of-k-bias-variance-tradeoff" class="level3">
+    <h3>5. Effect of k: Bias-Variance Tradeoff</h3>
+    <ul>
+    <li><p><strong><span class="math inline">\(k = 1\)</span></strong>:
+    each training point defines its own Voronoi cell. Training error is
+    zero. The boundary is highly irregular (high variance).</p></li>
+    <li><p><strong><span class="math inline">\(k = n\)</span></strong>:
+    every query returns the global majority class. No local adaptation
+    whatsoever (high bias).</p></li>
+    <li><p><strong>Optimal <span
+    class="math inline">\(k\)</span></strong>: found by
+    cross-validation. A common starting rule of thumb is <span
+    class="math inline">\(k \approx \sqrt{n}\)</span>.</p></li>
+    </ul>
+    <p>See
+    <a href="../../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a> for the formal MSE decomposition.</p>
+    </section>
+    <section id="cover-hart-theorem" class="level3">
+    <h3>6. Cover-Hart Theorem</h3>
+    <p>This is a theoretical result that proves 1-NN error is at most
+    twice the Bayes error (the lowest error any classifier can ever
+    achieve) as <span class="math inline">\(n \to \infty\)</span>. It is
+    rarely invoked directly in practice, but it has a few limited
+    uses:</p>
+    <ul>
+    <li><strong>Baseline justification.</strong> It is why KNN is the
+    standard sanity-check baseline. If a sophisticated model cannot beat
+    plain KNN, something is wrong with the pipeline.</li>
+    <li><strong>Diagnostic.</strong> If you have a rough sense of how
+    noisy your labels are and your 1-NN error is far above that, the
+    problem is your feature space (bad scaling, irrelevant features, or
+    too many dimensions) rather than the algorithm.</li>
+    <li><strong>Research.</strong> Sample complexity and active learning
+    papers use it to reason about how much data is needed before KNN
+    becomes competitive.</li>
+    </ul>
+    </section>
+    </section>
+    <section id="worked-example" class="level2">
+    <h2>Worked Example</h2>
+    <p><strong>Setup.</strong> Six training points in <span
+    class="math inline">\(\mathbb{R}^2\)</span>, binary classification
+    (A or B). Query point <span class="math inline">\(x_q = (4,
+    3)\)</span>. Use <span class="math inline">\(k = 3\)</span> and
+    Euclidean distance.</p>
+    <table>
+    <thead>
+    <tr>
+    <th><span class="math inline">\(i\)</span></th>
+    <th><span class="math inline">\(x_1\)</span></th>
+    <th><span class="math inline">\(x_2\)</span></th>
+    <th>Class</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>1</td>
+    <td>2</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>2</td>
+    <td>3</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>3</td>
+    <td>1</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td>6</td>
+    <td>5</td>
+    <td>B</td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td>7</td>
+    <td>4</td>
+    <td>B</td>
+    </tr>
+    <tr>
+    <td>6</td>
+    <td>5</td>
+    <td>6</td>
+    <td>B</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Step 1: Compute Euclidean distances from <span
+    class="math inline">\(x_q = (4, 3)\)</span>.</strong></p>
+    <p><span class="math display">\[d(x_q, x_1) = \sqrt{(4-1)^2 +
+    (3-2)^2} = \sqrt{9 + 1} = \sqrt{10} \approx 3.16\]</span> <span
+    class="math display">\[d(x_q, x_2) = \sqrt{(4-2)^2 + (3-3)^2} =
+    \sqrt{4 + 0} = 2.00\]</span> <span class="math display">\[d(x_q,
+    x_3) = \sqrt{(4-3)^2 + (3-1)^2} = \sqrt{1 + 4} = \sqrt{5} \approx
+    2.24\]</span> <span class="math display">\[d(x_q, x_4) =
+    \sqrt{(4-6)^2 + (3-5)^2} = \sqrt{4 + 4} = \sqrt{8} \approx
+    2.83\]</span> <span class="math display">\[d(x_q, x_5) =
+    \sqrt{(4-7)^2 + (3-4)^2} = \sqrt{9 + 1} = \sqrt{10} \approx
+    3.16\]</span> <span class="math display">\[d(x_q, x_6) =
+    \sqrt{(4-5)^2 + (3-6)^2} = \sqrt{1 + 9} = \sqrt{10} \approx
+    3.16\]</span></p>
+    <p><strong>Step 2: Rank by distance.</strong></p>
+    <table>
+    <thead>
+    <tr>
+    <th>Rank</th>
+    <th><span class="math inline">\(i\)</span></th>
+    <th>Distance</th>
+    <th>Class</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>1</td>
+    <td>2</td>
+    <td>2.00</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>2</td>
+    <td>3</td>
+    <td>2.24</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>3</td>
+    <td>4</td>
+    <td>2.83</td>
+    <td>B</td>
+    </tr>
+    <tr>
+    <td>4</td>
+    <td>1</td>
+    <td>3.16</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>5</td>
+    <td>5</td>
+    <td>3.16</td>
+    <td>B</td>
+    </tr>
+    <tr>
+    <td>6</td>
+    <td>6</td>
+    <td>3.16</td>
+    <td>B</td>
+    </tr>
+    </tbody>
+    </table>
+    <p><strong>Step 3: Take the top <span class="math inline">\(k =
+    3\)</span> neighbors</strong> <span class="math inline">\(\{x_2,
+    x_3, x_4\}\)</span> with classes <span class="math inline">\(\{A, A,
+    B\}\)</span>.</p>
+    <p><strong>Step 4: Majority vote.</strong> 2 votes for A, 1 for B.
+    Prediction: <strong>Class A</strong>.</p>
+    <p><strong>Sensitivity check.</strong> With <span
+    class="math inline">\(k = 5\)</span> the neighborhood extends to
+    <span class="math inline">\(\{x_2, x_3, x_4, x_1, x_5\}\)</span>:
+    classes <span class="math inline">\(\{A, A, B, A, B\}\)</span>,
+    giving 3 A vs 2 B. Still predicts A. At <span
+    class="math inline">\(k = 6\)</span> all points are included (3 A vs
+    3 B) and a tiebreak convention is needed.</p>
+    </section>
+    <section id="intuition-visual" class="level2">
+    <h2>Intuition / Visual</h2>
+    <p>KNN draws a decision boundary that literally hugs the training
+    data. At <span class="math inline">\(k = 1\)</span> the boundary is
+    a Voronoi tessellation, passing midway between every pair of
+    neighboring points from opposite classes. As <span
+    class="math inline">\(k\)</span> grows the boundary smooths out,
+    ignoring small clusters and outliers in favor of the broader
+    regional class distribution.</p>
+    <p>The figure below shows both effects. The leftmost panel is the
+    worked example: the red star is the query point <span
+    class="math inline">\((4, 3)\)</span>, dashed lines connect it to
+    its three nearest neighbors, and the dashed circle marks the edge of
+    the neighborhood. The three right panels show how the decision
+    boundary on a two-moon dataset evolves from jagged (<span
+    class="math inline">\(k = 1\)</span>) through intermediate (<span
+    class="math inline">\(k = 7\)</span>) to smooth (<span
+    class="math inline">\(k = 20\)</span>).</p>
+    <p><img src="../../images/knn.png" /></p>
+    <p>The animation below shows how the boundary is actually
+    constructed: every point on a fine mesh grid is classified by its 5
+    nearest neighbors, one column at a time. The colored region fills in
+    left to right until the full decision boundary emerges.</p>
+    <p><img src="../../images/knn_boundary.gif" /></p>
+    </section>
+    <section id="common-misconceptions" class="level2">
+    <h2>Common Misconceptions</h2>
+    <p><strong>“KNN has no training phase, so it is always
+    fast.”</strong> There is no model-fitting cost, but prediction
+    requires computing distances to every one of the <span
+    class="math inline">\(n\)</span> training points. For large <span
+    class="math inline">\(n\)</span>, naive KNN is the bottleneck.
+    Tree-based indexes (kd-tree, ball-tree) and approximate methods
+    (FAISS, Annoy) address this but do not eliminate the fundamental
+    <span class="math inline">\(O(np)\)</span> memory requirement.</p>
+    <p><strong>“Larger k avoids overfitting, so always choose large
+    k.”</strong> Very large <span class="math inline">\(k\)</span>
+    introduces high bias. At <span class="math inline">\(k = n\)</span>
+    the model always predicts the global majority class and is blind to
+    all local structure. The right <span
+    class="math inline">\(k\)</span> is dataset-dependent and found by
+    cross-validation.</p>
+    <p><strong>“KNN works well in high dimensions.”</strong> In high
+    dimensions all pairwise distances concentrate near the same value.
+    The ratio of the maximum to minimum distance approaches 1 as <span
+    class="math inline">\(p\)</span> grows, which makes “nearest”
+    meaningless. KNN should be paired with dimensionality reduction
+    (PCA, UMAP) or feature selection when <span
+    class="math inline">\(p\)</span> is large.</p>
+    <p><strong>“Feature units do not matter because we are just
+    measuring distance.”</strong> Units matter enormously. A feature in
+    kilometers and one in millimeters will dominate distance
+    calculations unless both are standardized to comparable scales
+    first.</p>
+    <p><strong>“KNN is only a classification algorithm.”</strong> KNN
+    extends naturally to regression (mean of neighbor responses),
+    density estimation, anomaly detection (high distance to <span
+    class="math inline">\(k\)</span>-th neighbor flags anomalies), and
+    missing-value imputation.</p>
+    <p><strong>“The Cover-Hart bound means 1-NN is close to optimal, so
+    use k = 1.”</strong> The bound holds only as <span
+    class="math inline">\(n \to \infty\)</span>. On finite datasets,
+    <span class="math inline">\(k = 1\)</span> produces high-variance
+    predictions that respond to label noise and outliers. Use the bound
+    as a theoretical floor, not a practical recommendation.</p>
+    </section>
+    <section id="connections" class="level2">
+    <h2>Connections</h2>
+    <p><a href="../../machine-learning/bias-variance-tradeoff.html">bias-variance
+    tradeoff</a>,
+    <a href="../../machine-learning/what-is-machine-learning.html">What
+    is machine learning</a>, <span class="wikilink"
+    title="See: Naive Bayes">Naive Bayes</span>,
+    <a href="../../machine-learning/unsupervised/dbscan.html">DBScan</a>,
+    <span class="wikilink" title="See: K-means">K-means</span> ,
+    <a href="../../probability-theory/bayesian-statistics/bayes-rule.html">Bayes
+    Rule</a>, <span class="wikilink"
+    title="See: Principal Component Analysis">Principal Component
+    Analysis</span></p>
+    </section>
+    <section id="references" class="level2">
+    <h2>References</h2>
+    <ul>
+    <li>James, G., Witten, D., Hastie, T., &amp; Tibshirani, R. (2013).
+    <em>An Introduction to Statistical Learning</em>. Springer. Chapter
+    2.</li>
+    <li>Hastie, T., Tibshirani, R., &amp; Friedman, J. (2009). <em>The
+    Elements of Statistical Learning</em> (2nd ed.). Springer. Chapter
+    13.</li>
+    </ul>
+    </section>
+  </div>
+</div>
+
+<div class="note-nav">
+    <span></span>
+    </div>
+
+<footer>
+  <p>&copy; 2026 Joshua Alexander Osborne &middot; <a href="../../../index.html">Portfolio</a></p>
+</footer>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">&#8679;</button>
+
+<script>
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function() {
+    var isLight = document.documentElement.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  });
+
+  var backBtn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    backBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  backBtn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  var tocLinks = Array.from(document.querySelectorAll('.note-toc a'));
+  var sections = tocLinks.map(function(a) {
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(a) { a.classList.remove('active'); });
+        var link = document.querySelector('.note-toc a[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(s) { obs.observe(s); });
+</script>
+
+</body>
+</html>
